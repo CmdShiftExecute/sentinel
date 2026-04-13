@@ -169,25 +169,36 @@ async function getBatteryInfo(): Promise<BatteryInfo> {
     };
   }
 
-  // Linux fallback
-  const cap = await run("cat /sys/class/power_supply/BAT0/capacity 2>/dev/null");
-  const status = await run("cat /sys/class/power_supply/BAT0/status 2>/dev/null");
-  const eFull = await run("cat /sys/class/power_supply/BAT0/energy_full 2>/dev/null");
-  const eDesign = await run("cat /sys/class/power_supply/BAT0/energy_full_design 2>/dev/null");
-  const cyc = await run("cat /sys/class/power_supply/BAT0/cycle_count 2>/dev/null");
+  // Linux fallback — auto-discover BAT slot (BAT0, BAT1, etc.)
+  const batSlotRaw = await run("ls /sys/class/power_supply/ 2>/dev/null | grep -m1 '^BAT'");
+  const batSlot = batSlotRaw || "BAT0";
+  const batBase = `/sys/class/power_supply/${batSlot}`;
+  const cap = await run(`cat ${batBase}/capacity 2>/dev/null`);
+  const status = await run(`cat ${batBase}/status 2>/dev/null`);
+  // Prefer charge_full/charge_full_design (μAh) — used on Apple hardware under Linux.
+  // Fall back to energy_full/energy_full_design (μWh) for standard ACPI batteries.
+  const chargeFull = await run(`cat ${batBase}/charge_full 2>/dev/null`);
+  const chargeDesign = await run(`cat ${batBase}/charge_full_design 2>/dev/null`);
+  const chargeNow = await run(`cat ${batBase}/charge_now 2>/dev/null`);
+  const eFull = await run(`cat ${batBase}/energy_full 2>/dev/null`);
+  const eDesign = await run(`cat ${batBase}/energy_full_design 2>/dev/null`);
+  const cyc = await run(`cat ${batBase}/cycle_count 2>/dev/null`);
+  const batTempRaw = await run(`cat ${batBase}/temp 2>/dev/null`);
   const lvl = parseInt(cap) || 0;
-  const ef = parseInt(eFull) || 0;
-  const ed = parseInt(eDesign) || 1;
+  const ef = parseInt(chargeFull) || parseInt(eFull) || 0;
+  const ed = parseInt(chargeDesign) || parseInt(eDesign) || 0;
+  const ec = parseInt(chargeNow) || 0;
+  const batTemp = batTempRaw ? Math.round(parseInt(batTempRaw) / 10 * 10) / 10 : null;
   return {
     level: lvl,
     charging: /^Charging$/i.test(status),
     powerSource: /Charging|Full/i.test(status) ? "AC Power" : "Battery",
-    health: Math.round((ef / ed) * 100),
+    health: ed > 0 ? Math.round((ef / ed) * 100) : 0,
     cycleCount: parseInt(cyc) || 0,
     designCapacity: ed,
     maxCapacity: ef,
-    currentCapacity: Math.round((lvl * ef) / 100),
-    temperature: null,
+    currentCapacity: ec || Math.round((lvl * ef) / 100),
+    temperature: batTemp,
     timeRemaining: null,
   };
 }
@@ -210,8 +221,21 @@ async function getTemperature(): Promise<TemperatureInfo> {
     if (tm) { const c = parseInt(tm[1]) / 100; return { cpu: Math.round(c * 10) / 10, label: label(c) }; }
     return { cpu: null, label: "Unavailable" };
   }
-  const raw = await run("cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null");
-  if (raw) { const c = parseInt(raw) / 1000; return { cpu: c, label: label(c) }; }
+  // Try lm-sensors first — parses "Package id 0" from coretemp (most accurate on this machine)
+  const sensorsOut = await run("sensors 2>/dev/null");
+  if (sensorsOut) {
+    const m = sensorsOut.match(/Package id \d+:\s*\+([\d.]+)°C/);
+    if (m) { const c = parseFloat(m[1]); return { cpu: c, label: label(c) }; }
+    // Fallback: any Core reading from coretemp
+    const core = sensorsOut.match(/Core \d+:\s*\+([\d.]+)°C/);
+    if (core) { const c = parseFloat(core[1]); return { cpu: c, label: label(c) }; }
+  }
+  // Fallback: thermal_zone1 is CPU on this machine (zone0 is battery/ACPI)
+  const zone1 = await run("cat /sys/class/thermal/thermal_zone1/temp 2>/dev/null");
+  if (zone1) { const c = parseInt(zone1) / 1000; return { cpu: c, label: label(c) }; }
+  // Last resort: zone0
+  const zone0 = await run("cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null");
+  if (zone0) { const c = parseInt(zone0) / 1000; return { cpu: c, label: label(c) }; }
   return { cpu: null, label: "Unavailable" };
 }
 
@@ -267,13 +291,23 @@ async function getNetworkInfo(): Promise<NetworkInfo> {
   let tailscaleIp = "Unknown";
   const interfaces: NetworkInfo["interfaces"] = [];
 
+  // Virtual/container interface prefixes to skip when selecting LAN IP.
+  // Covers: Docker (docker*, br-*), Linux bridges (br-*), veth pairs,
+  // libvirt (virbr*), LXC/LXD (lxc*, lxd*), VirtualBox (vboxnet*),
+  // VMware (vmnet*), VPN tunnels (tun*, tap*), WireGuard (wg*).
+  const VIRTUAL_IFACE = /^(docker|br-|veth|virbr|lxc|lxd|vboxnet|vmnet|tun|tap|wg)/;
+
   const nets = os.networkInterfaces();
   for (const [name, addrs] of Object.entries(nets)) {
     if (!addrs) continue;
     for (const a of addrs) {
       if (a.family !== "IPv4" || a.internal) continue;
       interfaces.push({ name, ip: a.address, mac: a.mac || "", status: "up" });
-      if (/^(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(a.address)) lanIp = a.address;
+      // Only consider physical/real interfaces for LAN IP
+      if (!VIRTUAL_IFACE.test(name) && lanIp === "Unknown" &&
+          /^(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(a.address)) {
+        lanIp = a.address;
+      }
       if (a.address.startsWith("100.")) tailscaleIp = a.address;
     }
   }
@@ -347,9 +381,18 @@ async function getSecurityInfo(openPortsCount: number): Promise<SecurityInfo> {
     firewallEnabled = fw.includes("enabled");
     firewallTool = "Application Firewall";
   } else {
-    const ufw = await run("ufw status 2>/dev/null");
-    if (ufw.includes("active")) { firewallEnabled = true; firewallTool = "UFW"; }
-    else {
+    // Detection order: UFW → firewalld → nftables → iptables
+    // ufw status requires root; read ufw.conf (world-readable, has ENABLED=yes/no)
+    const ufwConf = await run("cat /etc/ufw/ufw.conf 2>/dev/null");
+    const fwd = await run("systemctl is-active firewalld 2>/dev/null");
+    const nft = await run("systemctl is-active nftables 2>/dev/null");
+    if (/^ENABLED=yes/im.test(ufwConf)) {
+      firewallEnabled = true; firewallTool = "UFW";
+    } else if (fwd === "active") {
+      firewallEnabled = true; firewallTool = "firewalld";
+    } else if (nft === "active") {
+      firewallEnabled = true; firewallTool = "nftables";
+    } else {
       const ipt = await run("iptables -L -n 2>/dev/null | head -5");
       if (ipt && !ipt.includes("policy ACCEPT")) { firewallEnabled = true; firewallTool = "iptables"; }
     }
@@ -455,11 +498,34 @@ async function getServicesInfo(): Promise<ServicesInfo> {
         })
     : [];
 
-  const svcNames = ["sshd", "docker", "tailscaled", "node", "python3"];
+  // Each entry: systemd unit name to try first, then pgrep fallback process name.
+  // systemctl is-active works without root and is reliable across all systemd distros.
+  // pgrep fallback catches processes not managed by systemd (e.g. manually started node).
+  const svcDefs: { label: string; unit: string; pgrepName: string }[] = [
+    { label: "sshd",       unit: "ssh",        pgrepName: "sshd"       },
+    { label: "dockerd",    unit: "docker",     pgrepName: "dockerd"    },
+    { label: "tailscaled", unit: "tailscaled", pgrepName: "tailscaled" },
+    { label: "node",       unit: "",           pgrepName: "node"       },
+    { label: "python3",    unit: "",           pgrepName: "python3"    },
+  ];
   const systemServices = await Promise.all(
-    svcNames.map(async (name) => {
-      const pid = await run(`pgrep -x ${name} 2>/dev/null`);
-      return { name, status: (pid ? "running" : "stopped") as "running" | "stopped", pid: pid || null };
+    svcDefs.map(async ({ label, unit, pgrepName }) => {
+      let running = false;
+      if (unit) {
+        const state = await run(`systemctl is-active ${unit} 2>/dev/null`);
+        if (state === "active") running = true;
+        // Some distros use sshd.service not ssh.service — try both
+        if (!running && unit === "ssh") {
+          const altState = await run("systemctl is-active sshd 2>/dev/null");
+          if (altState === "active") running = true;
+        }
+      }
+      if (!running) {
+        const pid = await run(`pgrep -x ${pgrepName} 2>/dev/null`);
+        if (pid) running = true;
+      }
+      const pid = running ? await run(`pgrep -x ${pgrepName} 2>/dev/null | head -1`) : null;
+      return { name: label, status: (running ? "running" : "stopped") as "running" | "stopped", pid: pid || null };
     })
   );
 
