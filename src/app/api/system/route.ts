@@ -1,4 +1,8 @@
 import { NextResponse } from "next/server";
+
+// Force dynamic rendering — this route reads live system state on every request.
+// Without this, Next.js 14 statically pre-renders it at build time and caches the result.
+export const dynamic = "force-dynamic";
 import { exec as execCb } from "child_process";
 import { promisify } from "util";
 import os from "os";
