@@ -194,10 +194,10 @@ async function getBatteryInfo(): Promise<BatteryInfo> {
   const batTemp = batTempRaw ? Math.round(parseInt(batTempRaw) / 10 * 10) / 10 : null;
   // Calculate level against actual worn capacity (charge_full), not design capacity.
   // The kernel's /capacity file uses design capacity and understates real charge level.
-  // e.g. charge_now=5217000, charge_full=5535000, charge_full_design=7150000
-  //   kernel reports 73%  (5217000/7150000)
-  //   actual level is 94% (5217000/5535000)
-  const lvl = ec > 0 && ef > 0 ? Math.round((ec / ef) * 100) : parseInt(cap) || 0;
+  // When status is Full, charge_now never quite reaches charge_full (charger terminates
+  // early to protect the battery), so we honour the Full status and show 100%.
+  const isFull = /^Full$/i.test(status);
+  const lvl = isFull ? 100 : (ec > 0 && ef > 0 ? Math.min(100, Math.round((ec / ef) * 100)) : parseInt(cap) || 0);
   return {
     level: lvl,
     charging: /^Charging$/i.test(status),
