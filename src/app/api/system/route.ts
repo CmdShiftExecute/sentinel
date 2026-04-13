@@ -188,11 +188,16 @@ async function getBatteryInfo(): Promise<BatteryInfo> {
   const eDesign = await run(`cat ${batBase}/energy_full_design 2>/dev/null`);
   const cyc = await run(`cat ${batBase}/cycle_count 2>/dev/null`);
   const batTempRaw = await run(`cat ${batBase}/temp 2>/dev/null`);
-  const lvl = parseInt(cap) || 0;
   const ef = parseInt(chargeFull) || parseInt(eFull) || 0;
   const ed = parseInt(chargeDesign) || parseInt(eDesign) || 0;
   const ec = parseInt(chargeNow) || 0;
   const batTemp = batTempRaw ? Math.round(parseInt(batTempRaw) / 10 * 10) / 10 : null;
+  // Calculate level against actual worn capacity (charge_full), not design capacity.
+  // The kernel's /capacity file uses design capacity and understates real charge level.
+  // e.g. charge_now=5217000, charge_full=5535000, charge_full_design=7150000
+  //   kernel reports 73%  (5217000/7150000)
+  //   actual level is 94% (5217000/5535000)
+  const lvl = ec > 0 && ef > 0 ? Math.round((ec / ef) * 100) : parseInt(cap) || 0;
   return {
     level: lvl,
     charging: /^Charging$/i.test(status),
