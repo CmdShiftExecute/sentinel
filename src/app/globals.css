@@ -1,0 +1,237 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Prevent wide content (tables, logs) from expanding the viewport on mobile */
+html, body {
+  overflow-x: hidden;
+}
+
+/* ==============================================
+   SENTINEL — Server Dashboard Design System
+   Aesthetic: Hacker's Loft (sharp, luxurious, technical)
+   Accent: Electric Teal on dark surfaces
+   ============================================== */
+
+/* --- Dark Theme (Primary) --- */
+[data-theme="dark"] {
+  --bg-root: oklch(0.115 0.012 195);
+  --bg-surface: oklch(0.152 0.014 195);
+  --bg-elevated: oklch(0.188 0.016 195);
+  --bg-hover: oklch(0.22 0.018 195);
+  --bg-active: oklch(0.255 0.02 195);
+
+  --border: oklch(0.28 0.015 195);
+  --border-dim: oklch(0.21 0.012 195);
+
+  --text-primary: oklch(0.93 0.006 195);
+  --text-secondary: oklch(0.62 0.012 195);
+  --text-muted: oklch(0.42 0.01 195);
+
+  --accent: oklch(0.75 0.145 185);
+  --accent-dim: oklch(0.58 0.11 185);
+  --accent-bright: oklch(0.85 0.1 185);
+  --accent-surface: oklch(0.175 0.032 185);
+
+  --success: oklch(0.72 0.155 152);
+  --success-surface: oklch(0.175 0.032 152);
+  --warning: oklch(0.78 0.145 75);
+  --warning-surface: oklch(0.195 0.032 75);
+  --danger: oklch(0.68 0.175 28);
+  --danger-surface: oklch(0.18 0.04 28);
+
+  --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.3);
+  --shadow-md: 0 4px 16px oklch(0 0 0 / 0.35);
+  --shadow-glow: 0 0 24px oklch(0.75 0.145 185 / 0.08);
+
+  --sidebar-bg: oklch(0.1 0.01 195);
+  color-scheme: dark;
+}
+
+/* --- Light Theme --- */
+[data-theme="light"] {
+  --bg-root: oklch(0.962 0.005 195);
+  --bg-surface: oklch(0.993 0.002 195);
+  --bg-elevated: oklch(0.998 0.001 195);
+  --bg-hover: oklch(0.935 0.008 195);
+  --bg-active: oklch(0.91 0.012 195);
+
+  --border: oklch(0.875 0.01 195);
+  --border-dim: oklch(0.92 0.006 195);
+
+  --text-primary: oklch(0.175 0.015 195);
+  --text-secondary: oklch(0.40 0.02 195);
+  --text-muted: oklch(0.56 0.015 195);
+
+  --accent: oklch(0.48 0.145 185);
+  --accent-dim: oklch(0.38 0.11 185);
+  --accent-bright: oklch(0.58 0.13 185);
+  --accent-surface: oklch(0.94 0.032 185);
+
+  --success: oklch(0.48 0.155 152);
+  --success-surface: oklch(0.95 0.03 152);
+  --warning: oklch(0.55 0.145 75);
+  --warning-surface: oklch(0.96 0.03 75);
+  --danger: oklch(0.50 0.175 28);
+  --danger-surface: oklch(0.96 0.035 28);
+
+  --shadow-sm: 0 1px 3px oklch(0 0 0 / 0.05);
+  --shadow-md: 0 4px 16px oklch(0 0 0 / 0.07);
+  --shadow-glow: 0 0 24px oklch(0.48 0.145 185 / 0.06);
+
+  --sidebar-bg: oklch(0.985 0.003 195);
+  color-scheme: light;
+}
+
+/* --- Spacing Tokens --- */
+:root {
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+  --space-3xl: 48px;
+}
+
+/* --- Base Styles --- */
+body {
+  background: var(--bg-root);
+  color: var(--text-primary);
+  font-family: var(--font-body), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Theme color transitions on surface/text elements */
+[data-theme] {
+  transition: background-color 250ms ease, color 250ms ease;
+}
+
+/* --- Scrollbar --- */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* --- Stagger Delays --- */
+.stagger-1 { animation-delay: 0ms; }
+.stagger-2 { animation-delay: 50ms; }
+.stagger-3 { animation-delay: 100ms; }
+.stagger-4 { animation-delay: 150ms; }
+.stagger-5 { animation-delay: 200ms; }
+.stagger-6 { animation-delay: 250ms; }
+.stagger-7 { animation-delay: 300ms; }
+.stagger-8 { animation-delay: 350ms; }
+
+/* --- Gauge Animation --- */
+@keyframes gauge-fill {
+  from { stroke-dashoffset: var(--gauge-circumference); }
+}
+
+.gauge-ring {
+  animation: gauge-fill 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 300ms;
+}
+
+/* --- Dot Grid Background --- */
+.bg-dots {
+  background-image: radial-gradient(circle, var(--border-dim) 0.75px, transparent 0.75px);
+  background-size: 20px 20px;
+}
+
+/* --- Card Base --- */
+@layer components {
+  .card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-dim);
+    border-radius: 6px;
+    transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+  }
+  .card:hover {
+    border-color: var(--border);
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-1px);
+  }
+  .card-static {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-dim);
+    border-radius: 6px;
+  }
+
+  /* Section heading */
+  .section-label {
+    font-family: var(--font-display), sans-serif;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  /* Monospace data value */
+  .data-value {
+    font-family: "SF Mono", "Cascadia Code", "Fira Code", monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  /* Status dot */
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .status-dot-online {
+    background: var(--success);
+    box-shadow: 0 0 6px var(--success);
+  }
+  .status-dot-warning {
+    background: var(--warning);
+    box-shadow: 0 0 6px var(--warning);
+  }
+  .status-dot-offline {
+    background: var(--danger);
+    box-shadow: 0 0 6px var(--danger);
+  }
+  .status-dot-pulse {
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  /* Accent line divider */
+  .divider-accent {
+    height: 1px;
+    background: linear-gradient(90deg, var(--accent) 0%, transparent 100%);
+    opacity: 0.3;
+  }
+}
+
+/* --- Recharts Overrides --- */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: var(--border-dim);
+}
+.recharts-text {
+  fill: var(--text-muted);
+  font-family: "SF Mono", "Cascadia Code", monospace;
+  font-size: 10px;
+}
+.recharts-tooltip-wrapper {
+  outline: none;
+}
+
+/* --- Selection --- */
+::selection {
+  background: oklch(0.75 0.145 185 / 0.25);
+}
