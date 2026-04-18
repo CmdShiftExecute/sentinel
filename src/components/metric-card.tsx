@@ -32,6 +32,7 @@ export function MetricCard({
             "text-danger": status === "danger",
             "text-txt-primary": status === "neutral",
           })}
+          style={status === "neutral" ? { textShadow: "0 0 20px oklch(0.78 0.148 185 / 0.35)" } : undefined}
         >
           {value}
         </span>

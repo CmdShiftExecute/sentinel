@@ -45,6 +45,9 @@ activity.jsonl
 activity-state.json
 activity-collector.log
 
+# User-specific config (personal paths / service names — never commit)
+sentinel.config.json
+
 # Misc
 *.pem
 *.key

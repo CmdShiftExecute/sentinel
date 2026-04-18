@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 import clsx from "clsx";
 import { ThemeToggle } from "./theme-toggle";
+import { HelpOverlay } from "./help-overlay";
 import { useSystemData } from "@/hooks/use-system-data";
 
 const NAV_ITEMS = [
@@ -12,19 +14,38 @@ const NAV_ITEMS = [
   { href: "/network", label: "Network", icon: IconGlobe },
   { href: "/security", label: "Security", icon: IconShield },
   { href: "/services", label: "Services", icon: IconBox },
-  { href: "/activity", label: "Activity", icon: IconActivity },
+  { href: "/activity", label: "Server Logs", icon: IconActivity },
+  { href: "/settings", label: "Settings", icon: IconSettings },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const { data } = useSystemData(30_000);
+  const [helpOpen, setHelpOpen] = useState(false);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "?" && !e.ctrlKey && !e.metaKey && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
+        setHelpOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   return (
     <>
+      <HelpOverlay open={helpOpen} onClose={() => setHelpOpen(false)} />
       {/* ===== Desktop Sidebar ===== */}
       <aside
         className="hidden md:flex fixed left-0 top-0 bottom-0 w-[220px] flex-col z-40"
-        style={{ background: "var(--sidebar-bg)", borderRight: "1px solid var(--border-dim)" }}
+        style={{
+          background: "var(--sidebar-bg)",
+          backdropFilter: "blur(16px) saturate(1.4)",
+          WebkitBackdropFilter: "blur(16px) saturate(1.4)",
+          borderRight: "1px solid oklch(0.78 0.148 185 / 0.1)",
+          boxShadow: "inset -1px 0 0 oklch(0 0 0 / 0.2), 4px 0 24px oklch(0 0 0 / 0.3)",
+        }}
       >
         {/* Server Identity */}
         <div className="px-5 pt-6 pb-5">
@@ -48,7 +69,8 @@ export function Sidebar() {
             {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
               const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
               return (
-                <li key={href}>
+                <li key={href} className="relative">
+                  {active && <span className="nav-item-active-bar" />}
                   <Link
                     href={href}
                     className={clsx(
@@ -57,6 +79,7 @@ export function Sidebar() {
                         ? "bg-accent-surface text-accent"
                         : "text-txt-secondary hover:text-txt-primary hover:bg-surface-hover"
                     )}
+                    style={active ? { boxShadow: "inset 0 0 12px oklch(0.78 0.148 185 / 0.08)" } : undefined}
                   >
                     <Icon size={16} active={active} />
                     {label}
@@ -67,7 +90,7 @@ export function Sidebar() {
           </ul>
         </nav>
 
-        {/* Bottom: Status + Theme */}
+        {/* Bottom: Status + Theme + Help */}
         <div className="px-5 pb-5 space-y-4">
           <div className="divider-accent" />
           <div className="flex items-center justify-between">
@@ -80,7 +103,16 @@ export function Sidebar() {
                 {data ? "Connected" : "Offline"}
               </span>
             </div>
-            <ThemeToggle />
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setHelpOpen(true)}
+                title="Help (?)"
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-txt-muted hover:text-txt-primary hover:bg-surface-hover transition-colors"
+              >
+                <span className="text-[11px] font-bold">?</span>
+              </button>
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       </aside>
@@ -90,7 +122,9 @@ export function Sidebar() {
         className="md:hidden fixed top-0 left-0 z-50 flex items-center justify-between px-4 h-12 w-screen"
         style={{
           background: "var(--sidebar-bg)",
-          borderBottom: "1px solid var(--border-dim)",
+          backdropFilter: "blur(16px) saturate(1.4)",
+          WebkitBackdropFilter: "blur(16px) saturate(1.4)",
+          borderBottom: "1px solid oklch(0.78 0.148 185 / 0.1)",
           paddingTop: "env(safe-area-inset-top, 0px)",
         }}
       >
@@ -113,7 +147,9 @@ export function Sidebar() {
         className="md:hidden fixed bottom-0 left-0 z-50 flex items-center justify-around w-screen"
         style={{
           background: "var(--sidebar-bg)",
-          borderTop: "1px solid var(--border-dim)",
+          backdropFilter: "blur(16px) saturate(1.4)",
+          WebkitBackdropFilter: "blur(16px) saturate(1.4)",
+          borderTop: "1px solid oklch(0.78 0.148 185 / 0.1)",
           paddingBottom: "env(safe-area-inset-bottom, 0px)",
         }}
       >
@@ -124,8 +160,8 @@ export function Sidebar() {
               key={href}
               href={href}
               className={clsx(
-                "flex flex-col items-center gap-0.5 py-2 px-1 min-w-[56px] transition-colors duration-150",
-                active ? "text-accent" : "text-txt-muted"
+                "flex flex-col items-center gap-0.5 py-2 px-2 min-w-[52px] rounded-lg transition-all duration-150",
+                active ? "text-accent bg-accent-surface" : "text-txt-muted"
               )}
             >
               <Icon size={20} active={active} />
@@ -197,6 +233,15 @@ function IconActivity({ size, active }: { size: number; active: boolean }) {
       strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: active ? 1 : 0.6 }}>
       <circle cx="8" cy="8" r="6.5" />
       <polyline points="8,4.5 8,8 10.5,9.5" />
+    </svg>
+  );
+}
+function IconSettings({ size, active }: { size: number; active: boolean }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor"
+      strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: active ? 1 : 0.6 }}>
+      <circle cx="8" cy="8" r="2" />
+      <path d="M8 1.5v1.2M8 13.3v1.2M1.5 8h1.2M13.3 8h1.2M3.4 3.4l.85.85M11.75 11.75l.85.85M12.6 3.4l-.85.85M4.25 11.75l-.85.85" />
     </svg>
   );
 }

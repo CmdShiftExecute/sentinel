@@ -1,0 +1,18 @@
+{
+  "vault": {
+    "primaryPath": ""
+  },
+  "markdown": {
+    "enabled": true,
+    "extraExcludePaths": []
+  },
+  "services": {
+    "watchUnits": [
+      { "unit": "docker", "userUnit": false, "label": "Docker daemon started" },
+      { "unit": "my-app", "userUnit": true, "label": "My app started" }
+    ]
+  },
+  "hardware": {
+    "showBattery": true
+  }
+}

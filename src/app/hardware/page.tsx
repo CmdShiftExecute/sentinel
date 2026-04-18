@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useSystemData } from "@/hooks/use-system-data";
 import { Gauge } from "@/components/gauge";
 import { StatusBadge } from "@/components/status-badge";
@@ -22,13 +23,21 @@ export default function HardwarePage() {
   const { data } = useSystemData();
   const b = data?.battery;
   const t = data?.temperature;
+  const [showBattery, setShowBattery] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then((r) => r.json())
+      .then((cfg) => setShowBattery(cfg.hardware?.showBattery ?? true))
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="space-y-6">
       <h1 className="font-display text-xl font-bold tracking-tight">Hardware</h1>
 
       {/* Battery Section */}
-      <section className="space-y-3">
+      {showBattery && <section className="space-y-3">
         <h2 className="section-label">Battery & Power</h2>
         <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4">
           {/* Gauge */}
@@ -66,7 +75,7 @@ export default function HardwarePage() {
             </div>
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* Temperature Section */}
       <section className="space-y-3">

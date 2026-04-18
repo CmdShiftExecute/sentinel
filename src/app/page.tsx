@@ -287,8 +287,11 @@ function LogsViewer({ data }: { data: ReturnType<typeof useSystemData>["data"] }
             {logs.map((log, i) => (
               <div key={i} className="px-4 py-1.5 hover:bg-surface-hover transition-colors">
                 <div className="flex items-baseline gap-2 min-w-0">
-                  <span className="data-value text-[10px] text-txt-muted whitespace-nowrap shrink-0">
-                    {log.timestamp?.slice(-8) || ""}
+                  <span
+                    className="data-value text-[10px] text-txt-muted whitespace-nowrap shrink-0"
+                    title={log.timestamp ? new Date(log.timestamp).toLocaleString() : ""}
+                  >
+                    {log.timestamp ? relativeTime(log.timestamp) : ""}
                   </span>
                   {log.unit && (
                     <span className="text-[10px] font-semibold text-accent shrink-0">{log.unit}</span>
@@ -414,7 +417,22 @@ function UpdatesCard({ data }: { data: ReturnType<typeof useSystemData>["data"] 
 
 /* ---- Helpers ---- */
 function Sep() {
-  return <span className="w-px h-3 bg-line-dim" />;
+  return <span className="hidden sm:inline-block w-px h-3 bg-line-dim" />;
+}
+
+function relativeTime(isoStr: string): string {
+  try {
+    const dt = new Date(isoStr);
+    const now = new Date();
+    const seconds = Math.floor((now.getTime() - dt.getTime()) / 1000);
+    if (seconds < 60) return "just now";
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+    return dt.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  } catch {
+    return isoStr?.slice(-8) || "";
+  }
 }
 
 function KV({ label, value }: { label: string; value: string }) {

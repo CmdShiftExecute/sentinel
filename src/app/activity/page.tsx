@@ -7,7 +7,7 @@ import clsx from "clsx";
 interface ActivityEvent {
   id: string;
   ts: string;
-  category: "login" | "update" | "service" | "vault" | "security" | "system";
+  category: "login" | "update" | "service" | "vault" | "security" | "system" | "git" | "agent";
   level: "info" | "warn" | "error";
   title: string;
   detail: string;
@@ -24,9 +24,11 @@ const CATEGORIES = [
   { key: "login", label: "Logins" },
   { key: "update", label: "Updates" },
   { key: "service", label: "Services" },
-  { key: "vault", label: "Vault" },
+  { key: "vault", label: "Markdown" },
   { key: "security", label: "Security" },
   { key: "system", label: "System" },
+  { key: "git", label: "Git" },
+  { key: "agent", label: "Agents" },
 ];
 
 function relativeTime(isoStr: string): string {
@@ -58,6 +60,10 @@ function categoryToColor(category: string): { border: string; text: string } {
       return { border: "var(--danger)", text: "var(--danger)" };
     case "service":
       return { border: "var(--warning)", text: "var(--warning)" };
+    case "git":
+      return { border: "var(--success)", text: "var(--success)" };
+    case "agent":
+      return { border: "var(--accent)", text: "var(--accent)" };
     default:
       return { border: "var(--text-secondary)", text: "var(--text-secondary)" };
   }
@@ -190,6 +196,47 @@ function IconSystem({ size }: { size: number }) {
   );
 }
 
+function IconGit({ size }: { size: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="4" cy="4" r="1.5" />
+      <circle cx="4" cy="12" r="1.5" />
+      <circle cx="12" cy="4" r="1.5" />
+      <path d="M4 5.5v5" />
+      <path d="M5.5 4h3.5a1.5 1.5 0 0 1 1.5 1.5v1" />
+    </svg>
+  );
+}
+
+function IconAgent({ size }: { size: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="5" width="10" height="7" rx="1.5" />
+      <path d="M6 5V3.5a2 2 0 0 1 4 0V5" />
+      <circle cx="6.5" cy="8.5" r="1" fill="currentColor" stroke="none" />
+      <circle cx="9.5" cy="8.5" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 function getIconForCategory(category: string, size: number) {
   switch (category) {
     case "login":
@@ -204,6 +251,10 @@ function getIconForCategory(category: string, size: number) {
       return <IconSecurity size={size} />;
     case "system":
       return <IconSystem size={size} />;
+    case "git":
+      return <IconGit size={size} />;
+    case "agent":
+      return <IconAgent size={size} />;
     default:
       return <IconSystem size={size} />;
   }
@@ -260,12 +311,14 @@ export default function ActivityPage() {
     vault: events.filter((e) => e.category === "vault").length,
     security: events.filter((e) => e.category === "security").length,
     system: events.filter((e) => e.category === "system").length,
+    git: events.filter((e) => e.category === "git").length,
+    agent: events.filter((e) => e.category === "agent").length,
   };
 
   return (
     <div className="space-y-6">
       <h1 className="font-display text-xl font-bold tracking-tight">
-        Activity Log
+        Server Logs
       </h1>
 
       {/* Filter tabs + refresh indicator */}
@@ -328,8 +381,9 @@ export default function ActivityPage() {
                 key={event.id}
                 className="card-static px-4 py-3 flex gap-3 animate-fade-up transition-all hover:shadow-md"
                 style={{
-                  borderLeft: `3px solid ${borderColor}`,
+                  borderLeft: `${event.level === "error" ? "4px" : "3px"} solid ${borderColor}`,
                   animationDelay: `${i * 30}ms`,
+                  background: event.level === "error" ? "var(--danger-surface)" : undefined,
                 }}
               >
                 <div

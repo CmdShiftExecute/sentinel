@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useSystemData } from "@/hooks/use-system-data";
 import { StatusBadge } from "@/components/status-badge";
 import { formatBytes } from "@/lib/utils";
@@ -169,11 +170,43 @@ export default function NetworkPage() {
 function IpCard({ label, ip, description, accent }: {
   label: string; ip: string; description: string; accent?: boolean;
 }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    if (ip === "—") return;
+    navigator.clipboard.writeText(ip).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
   return (
     <div className="card px-4 py-3.5">
       <div className="text-[10px] text-txt-muted mb-1">{label}</div>
-      <div className={`data-value text-lg font-bold ${accent ? "text-accent" : "text-txt-primary"}`}>
-        {ip}
+      <div className="flex items-center justify-between gap-2">
+        <div className={`data-value text-lg font-bold ${accent ? "text-accent" : "text-txt-primary"}`}>
+          {ip}
+        </div>
+        {ip !== "—" && (
+          <button
+            onClick={handleCopy}
+            title={copied ? "Copied!" : "Copy to clipboard"}
+            className="text-txt-muted hover:text-accent transition-colors flex-shrink-0 p-0.5"
+          >
+            {copied ? (
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="2 8 6 12 14 4" />
+              </svg>
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="5" y="5" width="9" height="9" rx="1" />
+                <path d="M11 5V3a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h2" />
+              </svg>
+            )}
+          </button>
+        )}
       </div>
       <div className="text-[11px] text-txt-muted mt-1">{description}</div>
     </div>

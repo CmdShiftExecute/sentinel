@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Figtree } from "next/font/google";
 import { Sidebar } from "@/components/sidebar";
+import { PageWrapper } from "@/components/page-wrapper";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -37,12 +38,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" data-theme="dark" suppressHydrationWarning>
-      <body className={`${bricolage.variable} ${figtree.variable} font-body`}>
-        <div className="flex min-h-screen">
+      <body className={`${bricolage.variable} ${figtree.variable} font-body bg-scanlines`}>
+        <div className="flex min-h-screen bg-grid">
           <Sidebar />
           <main className="flex-1 min-w-0 md:ml-[220px] min-h-screen pt-14 pb-16 md:pt-0 md:pb-0">
             <div className="max-w-[1400px] mx-auto px-4 py-4 md:px-6 md:py-6 lg:px-8 lg:py-8">
-              {children}
+              <PageWrapper>{children}</PageWrapper>
             </div>
           </main>
         </div>

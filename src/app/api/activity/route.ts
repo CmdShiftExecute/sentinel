@@ -24,7 +24,7 @@ export async function GET(request: Request) {
 
     if (category) events = events.filter(e => e.category === category);
 
-    events = events.reverse().slice(0, limit);
+    events = events.slice(0, limit);
 
     return NextResponse.json({ events, total: events.length });
   } catch {
