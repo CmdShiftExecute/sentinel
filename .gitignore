@@ -41,6 +41,9 @@ yarn-error.log*
 
 # Runtime data
 .sentinel-uptime.json
+activity.jsonl
+activity-state.json
+activity-collector.log
 
 # Misc
 *.pem

@@ -277,10 +277,10 @@ function LogsViewer({ data }: { data: ReturnType<typeof useSystemData>["data"] }
   const logs = data?.logs;
   return (
     <div className="card-static overflow-hidden">
-      <div className="px-4 py-3 flex items-center justify-between bg-surface-elevated">
+      <Link href="/activity" className="px-4 py-3 flex items-center justify-between bg-surface-elevated hover:bg-surface-hover transition-colors cursor-pointer">
         <span className="section-label">Recent Logs</span>
-        <span className="text-[10px] text-txt-muted">{logs?.length ?? 0} entries</span>
-      </div>
+        <span className="text-[10px] text-accent font-medium">View all →</span>
+      </Link>
       <div className="max-h-[240px] overflow-y-auto">
         {logs && logs.length > 0 ? (
           <div className="divide-y divide-line-dim">

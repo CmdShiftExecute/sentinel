@@ -407,9 +407,23 @@ async function getSecurityInfo(openPortsCount: number): Promise<SecurityInfo> {
     }
   }
 
-  const ssh = await run("cat /etc/ssh/sshd_config 2>/dev/null");
-  const sshKeyOnly = ssh ? /PasswordAuthentication\s+no/im.test(ssh) : null;
-  const rootDisabled = ssh ? /PermitRootLogin\s+no/im.test(ssh) : null;
+  // Read main sshd_config plus all drop-in files (drop-ins take precedence — later files win)
+  const sshMain = await run("cat /etc/ssh/sshd_config 2>/dev/null");
+  const sshDropins = await run("cat /etc/ssh/sshd_config.d/*.conf 2>/dev/null || sudo cat /etc/ssh/sshd_config.d/*.conf 2>/dev/null");
+  // Combine: main first, drop-ins appended (later lines override earlier ones in sshd)
+  const ssh = [sshMain, sshDropins].filter(Boolean).join("\n");
+  // For each directive, find the LAST occurrence (drop-ins override main config)
+  function lastDirectiveValue(text: string, directive: string): string | null {
+    const re = new RegExp(`^[ \\t]*${directive}[ \\t]+(\\S+)`, "gim");
+    let last: string | null = null;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(text)) !== null) last = m[1];
+    return last;
+  }
+  const pwAuthVal = lastDirectiveValue(ssh, "PasswordAuthentication");
+  const rootLoginVal = lastDirectiveValue(ssh, "PermitRootLogin");
+  const sshKeyOnly = pwAuthVal !== null ? /^no$/i.test(pwAuthVal) : null;
+  const rootDisabled = rootLoginVal !== null ? /^no$/i.test(rootLoginVal) : null;
 
   let autoUpdates: boolean | null = null;
   if (PLATFORM === "darwin") {
@@ -422,8 +436,7 @@ async function getSecurityInfo(openPortsCount: number): Promise<SecurityInfo> {
 
   const toolDefs = [
     { name: "Fail2Ban", cmd: "which fail2ban-server 2>/dev/null", description: "Brute-force protection" },
-    { name: "ClamAV", cmd: "which clamscan 2>/dev/null", description: "Antivirus scanner" },
-    { name: "rkhunter", cmd: "which rkhunter 2>/dev/null", description: "Rootkit detection" },
+{ name: "rkhunter", cmd: "which rkhunter 2>/dev/null", description: "Rootkit detection" },
     { name: "Lynis", cmd: "which lynis 2>/dev/null", description: "Security auditing" },
     { name: "OpenSSH", cmd: "which sshd 2>/dev/null", description: "Secure shell server" },
     { name: "GnuPG", cmd: "which gpg 2>/dev/null", description: "Encryption toolkit" },

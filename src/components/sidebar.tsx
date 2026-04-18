@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: "/network", label: "Network", icon: IconGlobe },
   { href: "/security", label: "Security", icon: IconShield },
   { href: "/services", label: "Services", icon: IconBox },
+  { href: "/activity", label: "Activity", icon: IconActivity },
 ];
 
 export function Sidebar() {
@@ -187,6 +188,15 @@ function IconBox({ size, active }: { size: number; active: boolean }) {
       <path d="M1.5 5L8 1.5 14.5 5 8 8.5z" />
       <path d="M1.5 5v6L8 14.5" /><path d="M14.5 5v6L8 14.5" />
       <line x1="8" y1="8.5" x2="8" y2="14.5" />
+    </svg>
+  );
+}
+function IconActivity({ size, active }: { size: number; active: boolean }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor"
+      strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: active ? 1 : 0.6 }}>
+      <circle cx="8" cy="8" r="6.5" />
+      <polyline points="8,4.5 8,8 10.5,9.5" />
     </svg>
   );
 }
