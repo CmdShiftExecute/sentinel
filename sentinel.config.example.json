@@ -1,0 +1,43 @@
+{
+  "vault": {
+    "primaryPath": ""
+  },
+  "markdown": {
+    "enabled": true,
+    "extraExcludePaths": []
+  },
+  "services": {
+    "watchUnits": [
+      {
+        "unit": "docker",
+        "userUnit": false,
+        "label": "Docker daemon started"
+      },
+      {
+        "unit": "my-app",
+        "userUnit": true,
+        "label": "My app started"
+      }
+    ]
+  },
+  "hardware": {
+    "showBattery": true
+  },
+  "network": {
+    "knownDevices": {
+      "byMac": {
+        "aa:bb:cc:dd:ee:ff": "my-nas"
+      },
+      "byIp": {
+        "192.168.1.1": "Router"
+      }
+    }
+  },
+  "browserAgent": {
+    "vncUrl": "https://your-host:PORT/vnc.html?autoconnect=1&resize=scale",
+    "agentScript": ""
+  },
+  "estate": {
+    "pulseUrl": ""
+  }
+}

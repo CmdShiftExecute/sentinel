@@ -1,0 +1,872 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Prevent wide content (tables, logs) from expanding the viewport on mobile */
+html, body {
+  overflow-x: hidden;
+}
+
+/* ==============================================
+   SENTINEL — Server Dashboard Design System
+   Aesthetic: Operator Terminal (glass, glow, precision)
+   ============================================== */
+
+/* --- Dark Theme (Primary) --- */
+[data-theme="dark"] {
+  --bg-root: oklch(0.108 0.013 195);
+  --bg-surface: oklch(0.148 0.014 195);
+  --bg-elevated: oklch(0.185 0.016 195);
+  --bg-hover: oklch(0.218 0.018 195);
+  --bg-active: oklch(0.252 0.02 195);
+
+  --border: oklch(0.285 0.015 195);
+  --border-dim: oklch(0.205 0.012 195);
+
+  --text-primary: oklch(0.93 0.006 195);
+  --text-secondary: oklch(0.62 0.012 195);
+  --text-muted: oklch(0.42 0.01 195);
+
+  --accent: oklch(0.78 0.148 185);
+  --accent-dim: oklch(0.58 0.11 185);
+  --accent-bright: oklch(0.88 0.105 185);
+  --accent-surface: oklch(0.172 0.034 185);
+
+  --success: oklch(0.74 0.158 152);
+  --success-surface: oklch(0.172 0.034 152);
+  --warning: oklch(0.80 0.148 75);
+  --warning-surface: oklch(0.192 0.034 75);
+  --danger: oklch(0.70 0.178 28);
+  --danger-surface: oklch(0.178 0.042 28);
+
+  --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.35);
+  --shadow-md: 0 4px 20px oklch(0 0 0 / 0.45);
+  --shadow-glow: 0 0 0 1px color-mix(in oklab, var(--accent) 12%, transparent), 0 0 28px color-mix(in oklab, var(--accent) 9%, transparent);
+  --shadow-glow-strong: 0 0 0 1px color-mix(in oklab, var(--accent) 28%, transparent), 0 0 32px color-mix(in oklab, var(--accent) 20%, transparent);
+
+  /* Glass surface */
+  --glass-bg: oklch(0.148 0.014 195 / 0.68);
+  --glass-border: color-mix(in oklab, var(--accent) 12%, transparent);
+  --glass-highlight: oklch(0.93 0.006 195 / 0.04);
+
+  --sidebar-bg: oklch(0.098 0.011 195 / 0.92);
+
+  /* Backdrop + material tokens. Every value derives from --accent, so the
+     eight accent palettes each get a matching backdrop for free rather than
+     needing eight hand-written copies. */
+  --amb-1: color-mix(in oklab, var(--accent) 26%, transparent);
+  --amb-2: color-mix(in oklab, var(--accent-bright) 18%, transparent);
+  --amb-3: color-mix(in oklab, var(--accent-dim) 20%, transparent);
+  --grid-minor: color-mix(in oklab, var(--accent) 7%, transparent);
+  --grid-major: color-mix(in oklab, var(--accent) 13%, transparent);
+  --vignette: oklch(0 0 0 / 0.46);
+  --spot: color-mix(in oklab, var(--accent) 9%, transparent);
+  --sheen: oklch(1 0 0 / 0.06);
+
+  color-scheme: dark;
+}
+
+/* --- Light Theme --- */
+[data-theme="light"] {
+  --bg-root: oklch(0.962 0.005 195);
+  --bg-surface: oklch(0.993 0.002 195);
+  --bg-elevated: oklch(0.998 0.001 195);
+  --bg-hover: oklch(0.935 0.008 195);
+  --bg-active: oklch(0.91 0.012 195);
+
+  --border: oklch(0.875 0.01 195);
+  --border-dim: oklch(0.92 0.006 195);
+
+  --text-primary: oklch(0.175 0.015 195);
+  --text-secondary: oklch(0.40 0.02 195);
+  --text-muted: oklch(0.56 0.015 195);
+
+  --accent: oklch(0.48 0.145 185);
+  --accent-dim: oklch(0.38 0.11 185);
+  --accent-bright: oklch(0.58 0.13 185);
+  --accent-surface: oklch(0.94 0.032 185);
+
+  --success: oklch(0.48 0.155 152);
+  --success-surface: oklch(0.95 0.03 152);
+  --warning: oklch(0.55 0.145 75);
+  --warning-surface: oklch(0.96 0.03 75);
+  --danger: oklch(0.50 0.175 28);
+  --danger-surface: oklch(0.96 0.035 28);
+
+  --shadow-sm: 0 1px 3px oklch(0 0 0 / 0.05);
+  --shadow-md: 0 4px 16px oklch(0 0 0 / 0.08);
+  --shadow-glow: 0 0 0 1px color-mix(in oklab, var(--accent) 10%, transparent), 0 0 20px color-mix(in oklab, var(--accent) 7%, transparent);
+  --shadow-glow-strong: 0 0 0 1px color-mix(in oklab, var(--accent) 25%, transparent), 0 0 24px color-mix(in oklab, var(--accent) 18%, transparent);
+
+  --glass-bg: oklch(0.993 0.002 195 / 0.85);
+  --glass-border: color-mix(in oklab, var(--accent) 12%, transparent);
+  --glass-highlight: oklch(0 0 0 / 0.02);
+
+  --sidebar-bg: oklch(0.985 0.003 195);
+
+  /* Light theme carries the same treatment at much lower intensity: on a pale
+     ground the same alphas read as dirt rather than atmosphere, and the
+     vignette has to lighten the corners instead of darkening them. */
+  --amb-1: color-mix(in oklab, var(--accent) 13%, transparent);
+  --amb-2: color-mix(in oklab, var(--accent-bright) 10%, transparent);
+  --amb-3: color-mix(in oklab, var(--accent-dim) 9%, transparent);
+  --grid-minor: color-mix(in oklab, var(--accent) 6%, transparent);
+  --grid-major: color-mix(in oklab, var(--accent) 11%, transparent);
+  --vignette: oklch(0.55 0.02 195 / 0.10);
+  --spot: color-mix(in oklab, var(--accent) 6%, transparent);
+  --sheen: oklch(1 0 0 / 0.55);
+
+  color-scheme: light;
+}
+
+/* ==============================================
+   ACCENT PALETTES — theme-factory colors
+   Default (no data-palette / "operator"): the teal defined in the
+   theme blocks above. Each palette overrides only the accent family;
+   glows, scrollbars, selection etc. all derive from var(--accent).
+   ============================================== */
+
+/* Tech Innovation — electric blue */
+[data-theme="dark"][data-palette="tech"] {
+  --accent: oklch(0.72 0.17 258);
+  --accent-dim: oklch(0.55 0.13 258);
+  --accent-bright: oklch(0.82 0.12 258);
+  --accent-surface: oklch(0.17 0.04 258);
+}
+[data-theme="light"][data-palette="tech"] {
+  --accent: oklch(0.5 0.19 258);
+  --accent-dim: oklch(0.4 0.15 258);
+  --accent-bright: oklch(0.6 0.17 258);
+  --accent-surface: oklch(0.93 0.04 258);
+}
+
+/* Forest Canopy — sage green */
+[data-theme="dark"][data-palette="forest"] {
+  --accent: oklch(0.76 0.11 145);
+  --accent-dim: oklch(0.58 0.09 145);
+  --accent-bright: oklch(0.86 0.08 145);
+  --accent-surface: oklch(0.17 0.03 145);
+}
+[data-theme="light"][data-palette="forest"] {
+  --accent: oklch(0.46 0.11 150);
+  --accent-dim: oklch(0.36 0.09 150);
+  --accent-bright: oklch(0.56 0.1 150);
+  --accent-surface: oklch(0.93 0.03 150);
+}
+
+/* Golden Hour — mustard amber */
+[data-theme="dark"][data-palette="golden"] {
+  --accent: oklch(0.8 0.14 80);
+  --accent-dim: oklch(0.62 0.11 80);
+  --accent-bright: oklch(0.88 0.11 80);
+  --accent-surface: oklch(0.18 0.035 80);
+}
+[data-theme="light"][data-palette="golden"] {
+  --accent: oklch(0.55 0.12 75);
+  --accent-dim: oklch(0.45 0.1 75);
+  --accent-bright: oklch(0.65 0.12 75);
+  --accent-surface: oklch(0.95 0.04 85);
+}
+
+/* Sunset Boulevard — burnt orange */
+[data-theme="dark"][data-palette="sunset"] {
+  --accent: oklch(0.74 0.14 40);
+  --accent-dim: oklch(0.58 0.11 40);
+  --accent-bright: oklch(0.84 0.1 40);
+  --accent-surface: oklch(0.18 0.04 40);
+}
+[data-theme="light"][data-palette="sunset"] {
+  --accent: oklch(0.55 0.15 38);
+  --accent-dim: oklch(0.45 0.12 38);
+  --accent-bright: oklch(0.65 0.14 38);
+  --accent-surface: oklch(0.95 0.035 40);
+}
+
+/* Midnight Galaxy — cosmic violet */
+[data-theme="dark"][data-palette="galaxy"] {
+  --accent: oklch(0.75 0.1 300);
+  --accent-dim: oklch(0.58 0.09 300);
+  --accent-bright: oklch(0.85 0.08 300);
+  --accent-surface: oklch(0.18 0.035 300);
+}
+[data-theme="light"][data-palette="galaxy"] {
+  --accent: oklch(0.5 0.13 300);
+  --accent-dim: oklch(0.4 0.11 300);
+  --accent-bright: oklch(0.6 0.12 300);
+  --accent-surface: oklch(0.94 0.03 300);
+}
+
+/* --- Motion + material constants --- */
+:root {
+  --blur-card: 20px;
+  --dur-1: 0.16s;
+  --dur-2: 0.32s;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* --- Spacing Tokens --- */
+:root {
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+  --space-3xl: 48px;
+}
+
+/* --- Base Styles --- */
+body {
+  background: var(--bg-root);
+  color: var(--text-primary);
+  font-family: var(--font-body), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Theme color transitions on surface/text elements */
+[data-theme] {
+  transition: background-color 250ms ease, color 250ms ease;
+}
+
+/* --- Scrollbar --- */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--accent) 25%, transparent);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--accent) 55%, transparent);
+}
+
+/* --- Stagger Delays --- */
+.stagger-1  { animation-delay: 0ms; }
+.stagger-2  { animation-delay: 45ms; }
+.stagger-3  { animation-delay: 90ms; }
+.stagger-4  { animation-delay: 135ms; }
+.stagger-5  { animation-delay: 180ms; }
+.stagger-6  { animation-delay: 225ms; }
+.stagger-7  { animation-delay: 270ms; }
+.stagger-8  { animation-delay: 315ms; }
+.stagger-9  { animation-delay: 360ms; }
+.stagger-10 { animation-delay: 405ms; }
+.stagger-11 { animation-delay: 450ms; }
+.stagger-12 { animation-delay: 495ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .stagger-1, .stagger-2, .stagger-3, .stagger-4,
+  .stagger-5, .stagger-6, .stagger-7, .stagger-8,
+  .stagger-9, .stagger-10, .stagger-11, .stagger-12 {
+    animation-delay: 0ms !important;
+    animation-duration: 0ms !important;
+  }
+}
+
+/* --- Gauge Animation --- */
+@keyframes gauge-fill {
+  from { stroke-dashoffset: var(--gauge-circumference); }
+}
+
+.gauge-ring {
+  animation: gauge-fill 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 300ms;
+}
+
+/* --- Background Patterns --- */
+.bg-dots {
+  background-image: radial-gradient(circle, var(--border-dim) 0.75px, transparent 0.75px);
+  background-size: 20px 20px;
+}
+
+/* Kept as a no-op: the layered .backdrop element below supersedes it, and
+   leaving the class defined means an older cached page cannot lose its
+   background mid-deploy. */
+.bg-grid { background-image: none; }
+
+/* ==============================================
+   THE BACKDROP — the depth stack the glass refracts.
+   One fixed, inert element carrying three layers, back to front:
+     .backdrop          drifting ambient glows
+     .backdrop::before  graph-paper grid, minor 24px over major 96px, edge-masked
+     .backdrop::after   vignette, focusing the eye on the centre
+   A single element is used rather than body/html pseudo-elements because
+   .bg-scanlines already owns body::after, and stacking three layers inside one
+   fixed container makes their paint order explicit instead of depending on how
+   negative z-index interacts with the canvas background.
+   ============================================== */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  overflow: hidden;
+}
+.backdrop::before,
+.backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+/* Ambient glows. Oversized and slowly drifting, so the page has weather rather
+   than a static gradient. */
+.backdrop {
+  background-image:
+    radial-gradient(44vmax 34vmax at 12% -8%, var(--amb-1), transparent 62%),
+    radial-gradient(38vmax 32vmax at 106% 108%, var(--amb-2), transparent 62%),
+    radial-gradient(30vmax 26vmax at 86% 2%, var(--amb-3), transparent 60%);
+  animation: backdrop-drift 26s ease-in-out infinite alternate;
+}
+/* Dual-density blueprint grid, faded out toward the edges so it reads as paper
+   under the interface rather than a texture painted on top of it. */
+.backdrop::before {
+  background-image:
+    linear-gradient(var(--grid-minor) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-minor) 1px, transparent 1px),
+    linear-gradient(var(--grid-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-major) 1px, transparent 1px);
+  background-size: 24px 24px, 24px 24px, 96px 96px, 96px 96px;
+  -webkit-mask-image: radial-gradient(circle at 50% 20%, #000, rgba(0, 0, 0, 0.3) 72%, transparent 118%);
+  mask-image: radial-gradient(circle at 50% 20%, #000, rgba(0, 0, 0, 0.3) 72%, transparent 118%);
+}
+.backdrop::after {
+  background: radial-gradient(120% 90% at 50% 12%, transparent 55%, var(--vignette) 120%);
+}
+@keyframes backdrop-drift {
+  from { transform: translate3d(-1.5%, -1%, 0) scale(1); }
+  to   { transform: translate3d(2%, 1.5%, 0) scale(1.08); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .backdrop { animation: none; }
+}
+
+/* Subtle static scanlines — very low opacity */
+.bg-scanlines::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    oklch(0 0 0 / 0.015) 2px,
+    oklch(0 0 0 / 0.015) 4px
+  );
+  pointer-events: none;
+  z-index: 9998;
+}
+
+/* --- Card Base --- */
+@layer components {
+
+  /* Glass card — main interactive card with lift + glow on hover */
+  .card {
+    background-color: var(--glass-bg);
+    background-image:
+      linear-gradient(180deg, var(--sheen), transparent 34%),
+      radial-gradient(140% 70% at 8% -12%, var(--sheen), transparent 55%);
+    backdrop-filter: blur(var(--blur-card)) saturate(1.5);
+    -webkit-backdrop-filter: blur(var(--blur-card)) saturate(1.5);
+    border: 1px solid var(--border-dim);
+    border-radius: 10px;
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      var(--shadow-sm);
+    transition:
+      border-color 200ms ease,
+      box-shadow 200ms ease,
+      transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
+      background 200ms ease;
+  }
+  .card:hover {
+    background-color: color-mix(in oklab, var(--bg-elevated) 76%, transparent);
+    border-color: color-mix(in oklab, var(--accent) 35%, transparent);
+    box-shadow:
+      inset 0 1px 0 oklch(0.93 0.006 195 / 0.07),
+      var(--shadow-glow),
+      var(--shadow-md);
+    transform: translateY(-2px);
+  }
+
+  /* Static card — tables, timelines, no hover */
+  .card-static {
+    background-color: var(--glass-bg);
+    background-image: linear-gradient(180deg, var(--sheen), transparent 34%);
+    backdrop-filter: blur(var(--blur-card)) saturate(1.4);
+    -webkit-backdrop-filter: blur(var(--blur-card)) saturate(1.4);
+    border: 1px solid var(--border-dim);
+    border-radius: 10px;
+    box-shadow: inset 0 1px 0 var(--glass-highlight);
+  }
+
+  /* Section heading */
+  .section-label {
+    font-family: var(--font-display), sans-serif;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  /* Monospace data value */
+  .data-value {
+    font-family: "SF Mono", "Cascadia Code", "Fira Code", monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  /* Glowing accent value (use on key metrics) */
+  .data-value-glow {
+    font-family: "SF Mono", "Cascadia Code", "Fira Code", monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+    color: var(--accent);
+    text-shadow: 0 0 16px color-mix(in oklab, var(--accent) 60%, transparent);
+  }
+
+  /* Status dot */
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .status-dot-online {
+    background: var(--success);
+    box-shadow: 0 0 0 2px oklch(0.74 0.158 152 / 0.15), 0 0 8px var(--success);
+  }
+  .status-dot-warning {
+    background: var(--warning);
+    box-shadow: 0 0 0 2px oklch(0.80 0.148 75 / 0.15), 0 0 8px var(--warning);
+  }
+  .status-dot-offline {
+    background: var(--danger);
+    box-shadow: 0 0 0 2px oklch(0.70 0.178 28 / 0.15), 0 0 8px var(--danger);
+  }
+  .status-dot-pulse {
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+
+  /* Accent line divider */
+  .divider-accent {
+    height: 1px;
+    background: linear-gradient(90deg, color-mix(in oklab, var(--accent) 50%, transparent) 0%, transparent 70%);
+  }
+
+  /* Nav item hover glow bar */
+  .nav-item-active-bar {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2px;
+    height: 60%;
+    border-radius: 0 2px 2px 0;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+}
+
+/* --- Recharts Overrides --- */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke: var(--border-dim);
+}
+.recharts-text {
+  fill: var(--text-muted);
+  font-family: "SF Mono", "Cascadia Code", monospace;
+  font-size: 10px;
+}
+.recharts-tooltip-wrapper {
+  outline: none;
+}
+
+/* Recharts tooltip glass */
+.recharts-default-tooltip {
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 6px !important;
+}
+
+/* --- Shimmer skeleton --- */
+@keyframes shimmer {
+  0% { background-position: -800px 0; }
+  100% { background-position: 800px 0; }
+}
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--bg-surface) 0%,
+    var(--bg-elevated) 50%,
+    var(--bg-surface) 100%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* --- Settings inputs --- */
+.settings-input {
+  width: 100%;
+  padding: 0.375rem 0.625rem;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-dim);
+  transition: border-color 0.15s;
+}
+.settings-input:focus {
+  outline: none;
+  border-color: color-mix(in oklab, var(--accent) 50%, transparent);
+}
+.settings-input-sm {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-dim);
+  transition: border-color 0.15s;
+}
+.settings-input-sm:focus {
+  outline: none;
+  border-color: color-mix(in oklab, var(--accent) 50%, transparent);
+}
+.settings-add-btn {
+  font-size: 0.75rem;
+  color: var(--accent);
+  padding: 0.25rem 0;
+  transition: opacity 0.15s;
+}
+.settings-add-btn:hover { opacity: 0.75; }
+.settings-remove-btn {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  transition: color 0.15s, background 0.15s;
+}
+.settings-remove-btn:hover {
+  color: var(--danger);
+  background: oklch(0.6 0.2 25 / 0.1);
+}
+.code-inline {
+  font-family: var(--font-mono, monospace);
+  font-size: 0.75em;
+  padding: 0.1em 0.35em;
+  border-radius: 0.2em;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-dim);
+  color: var(--accent);
+}
+
+/* --- Selection --- */
+::selection {
+  background: color-mix(in oklab, var(--accent) 28%, transparent);
+}
+
+/* --- Focus ring --- */
+:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--accent) 70%, transparent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* --- Light theme card overrides (glass not ideal on light) --- */
+[data-theme="light"] .card,
+[data-theme="light"] .card-static {
+  background-color: var(--bg-surface);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: var(--shadow-sm);
+}
+[data-theme="light"] .card:hover {
+  background: color-mix(in oklab, var(--bg-hover) 45%, var(--bg-surface));
+  border-color: color-mix(in oklab, var(--accent) 35%, transparent);
+  box-shadow: var(--shadow-glow), var(--shadow-md);
+}
+
+/* ==============================================
+   MOTION LAYER — crisp, high-frequency-subtle, one-time-expressive
+   ============================================== */
+
+/* --- Cursor spotlight on cards (pointer-driven, no re-renders) --- */
+.card {
+  position: relative;
+}
+.card-static {
+  position: relative;
+}
+/* inset:-1px lets the light kiss the border rather than stopping short of it. */
+.card::after,
+.card-static::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-2) var(--ease);
+  /* --spot-r is set per element by PointerGlow from that element's own size.
+     The fallback is deliberately small: if the script has not run yet, a
+     modest light is right on every card, whereas a large one is wrong on most. */
+  background: radial-gradient(
+    var(--spot-r, 90px) circle at var(--mx, 50%) var(--my, 50%),
+    var(--spot),
+    transparent 58%
+  );
+}
+.card:hover::after,
+.card-static:hover::after {
+  opacity: 1;
+}
+
+/* --- Press feedback (interruptible, transform-only) --- */
+.card:active {
+  transform: translateY(-1px) scale(0.995);
+}
+button:active {
+  transform: scale(0.97);
+}
+
+/* --- Boot sweep: one scan pass on first load of a session --- */
+@keyframes boot-sweep {
+  from { transform: translateY(-18vh); opacity: 0.9; }
+  to   { transform: translateY(118vh); opacity: 0; }
+}
+.boot-sweep {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 10vh;
+  z-index: 9999;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in oklab, var(--accent) 7%, transparent) 45%,
+    color-mix(in oklab, var(--accent) 12%, transparent) 50%,
+    color-mix(in oklab, var(--accent) 7%, transparent) 55%,
+    transparent
+  );
+  animation: boot-sweep 1100ms cubic-bezier(0.16, 1, 0.3, 1) 150ms both;
+}
+
+/* --- Terminal caret after page titles --- */
+.title-caret::after {
+  content: "";
+  display: inline-block;
+  width: 0.45em;
+  height: 0.95em;
+  margin-left: 0.25em;
+  vertical-align: text-bottom;
+  background: var(--accent);
+  animation: terminal-cursor 1.1s step-end infinite;
+}
+
+@keyframes terminal-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* --- Live status dot: expanding ping ring --- */
+.status-dot-pulse {
+  position: relative;
+}
+.status-dot-pulse::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: currentColor;
+  background: inherit;
+  animation: dot-ping 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+@keyframes dot-ping {
+  0%   { transform: scale(1); opacity: 0.5; }
+  70%, 100% { transform: scale(2.4); opacity: 0; }
+}
+
+/* --- Sidebar nav: icon nudge on hover --- */
+.nav-link svg {
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.nav-link:hover svg {
+  transform: translateX(2px);
+}
+
+/* --- Card arrow slide on hover --- */
+.card.group:hover .arrow-slide {
+  transform: translateX(2px);
+}
+.arrow-slide {
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* --- Reduced motion: collapse the whole layer --- */
+@media (prefers-reduced-motion: reduce) {
+  .card::after, .card-static::after { transition: none; opacity: 0; }
+  .card:active, button:active { transform: none; }
+  .boot-sweep { animation: none; display: none; }
+  .title-caret::after { animation: none; }
+  .status-dot-pulse::after { animation: none; display: none; }
+  .nav-link svg, .arrow-slide { transition: none; }
+  .nav-link:hover svg, .card.group:hover .arrow-slide { transform: none; }
+}
+
+/* --- Scroll reveal: "the console assembles itself".
+   Directional entrance choreography, assigned by PageWrapper's observer from
+   each card's position: left-column cards slide in from the left, right-column
+   cards from the right (converging pairs), center and full-width cards rise
+   and settle last in their row. A slight defocus resolves as each panel locks
+   in. Classes are applied before first paint; if JS never runs, nothing is
+   ever hidden. fill-mode backwards (not both) so finished animations release
+   the element and .card:hover transforms keep working. --- */
+@keyframes reveal-from-left {
+  from { opacity: 0; transform: translateX(-64px); filter: blur(5px); }
+  to   { opacity: 1; transform: none; filter: none; }
+}
+@keyframes reveal-from-right {
+  from { opacity: 0; transform: translateX(64px); filter: blur(5px); }
+  to   { opacity: 1; transform: none; filter: none; }
+}
+@keyframes reveal-rise {
+  from { opacity: 0; transform: translateY(44px) scale(0.975); filter: blur(5px); }
+  to   { opacity: 1; transform: none; filter: none; }
+}
+.reveal-pending {
+  opacity: 0;
+}
+.reveal-in-left,
+.reveal-in-right,
+.reveal-in-rise {
+  animation-duration: 750ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: backwards;
+  animation-delay: var(--reveal-delay, 0ms);
+}
+.reveal-in-left  { animation-name: reveal-from-left; }
+.reveal-in-right { animation-name: reveal-from-right; }
+.reveal-in-rise  { animation-name: reveal-rise; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal-pending { opacity: 1; }
+  .reveal-in-left, .reveal-in-right, .reveal-in-rise { animation: none; }
+}
+
+/* ==============================================
+   PRIMITIVES — pills, segmented control, estate pips
+   ============================================== */
+@layer components {
+
+  /* Pill: a tinted ground with a mixed border, never a solid fill. A solid
+     chip reads as a button you can press; these are labels. */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 999px;
+    padding: 1px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    border: 1px solid transparent;
+  }
+  .pill-accent {
+    background: var(--accent-surface);
+    color: var(--accent);
+    border-color: color-mix(in oklab, var(--accent) 34%, transparent);
+  }
+  .pill-muted {
+    background: var(--bg-elevated);
+    color: var(--text-muted);
+    border-color: var(--border-dim);
+  }
+  .pill-warn {
+    background: var(--warning-surface);
+    color: var(--warning);
+    border-color: color-mix(in oklab, var(--warning) 34%, transparent);
+  }
+  .pill-danger {
+    background: var(--danger-surface);
+    color: var(--danger);
+    border-color: color-mix(in oklab, var(--danger) 34%, transparent);
+  }
+
+  /* Segmented control */
+  .segmented {
+    display: inline-flex;
+    padding: 2px;
+    gap: 2px;
+    border-radius: 8px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-dim);
+  }
+  .segmented-btn {
+    padding: 2px 9px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    transition: color var(--dur-1) ease, background var(--dur-1) ease, box-shadow var(--dur-1) ease;
+  }
+  .segmented-btn:hover { color: var(--text-secondary); }
+  .segmented-btn.is-on {
+    color: var(--bg-root);
+    background: linear-gradient(180deg, var(--accent), color-mix(in oklab, var(--accent) 78%, #000));
+    box-shadow: 0 0 14px color-mix(in oklab, var(--accent) 38%, transparent);
+  }
+
+  /* Estate pip: one dot per check. Sized so 33 of them still sit inside a
+     single tile without wrapping into a wall. */
+  .estate-pip {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex: none;
+    display: inline-block;
+  }
+  /* Only the states that need to be noticed glow; a wall of 43 glowing green
+     dots is visual noise that hides the two that matter. */
+  .estate-pip-problem { box-shadow: 0 0 6px var(--danger); }
+  /* Full strength: this dot was dimmed when it was grey, which together with a
+     muted colour made an unchecked item nearly invisible among the green. */
+  .estate-pip-unknown { opacity: 1; }
+  /* The one state that is deliberately quiet — forty green dots at full
+     strength is noise that hides the two that matter. */
+  .estate-pip-ok { opacity: 0.8; }
+
+  .estate-tile:focus-visible { outline-offset: 1px; }
+}
+
+/* Accessibility: honour a stated preference for less transparency by dropping
+   the blur and falling back to an opaque surface. The blur is decoration; the
+   contrast underneath it is not negotiable. */
+@media (prefers-reduced-transparency: reduce) {
+  .card, .card-static {
+    background-color: var(--bg-surface);
+    background-image: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .backdrop { display: none; }
+}
+
+/* Browser Agent: full-height snap sections on desktop. Previously injected from
+   the page as a <style> child, which mismatched on hydration because the server
+   escapes the ">" in the child selector and the client does not. Static CSS
+   belongs in the stylesheet. */
+@media (min-width: 768px) {
+  .snap-y.snap-mandatory { height: 100dvh !important; }
+  .snap-y.snap-mandatory > section { height: 100dvh !important; }
+}
