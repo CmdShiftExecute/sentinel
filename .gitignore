@@ -59,3 +59,7 @@ sentinel.config.json
 *.pem
 *.key
 *.cert
+
+# Host-specific job inventory written by server-ops/bin/schedule-collect.py.
+# Contains real unit names and paths — never commit (repo is public).
+public/scheduled-jobs.json
