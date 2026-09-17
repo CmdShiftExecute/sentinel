@@ -29,6 +29,7 @@ import type {
   ThroughputInfo,
   UpdateInfo,
   UptimePoint,
+  PortInfo,
 } from "@/lib/types";
 import path from "path";
 import fs from "fs";
@@ -536,6 +537,19 @@ async function getNetworkInfo(): Promise<NetworkInfo> {
   const ports: NetworkInfo["listeningPorts"] = [];
   const seen = new Set<number>();
 
+  /** Classify a bind address by who can reach it. See PortExposure in types.ts.
+   *  `tailscaleIp` is read from the live interface above, so this follows the
+   *  machine rather than a hard-coded address that would rot on a re-key. */
+  const classify = (addr: string): PortInfo["exposure"] => {
+    const a = (addr || "").replace(/[[\]]/g, "").split("%")[0].trim();
+    if (a === "::1" || a.startsWith("127.")) return "loopback";
+    if (tailscaleIp && a === tailscaleIp) return "tailnet";
+    // Tailscale's own IPv6 range. Bare-prefix match, because the suffix is
+    // per-node and changes when the node is re-keyed.
+    if (a.toLowerCase().startsWith("fd7a:115c:a1e0")) return "tailnet";
+    return "exposed";
+  };
+
   if (PLATFORM === "darwin") {
     const lsof = await run("lsof -iTCP -sTCP:LISTEN -P -n 2>/dev/null");
     for (const line of lsof.split("\n").slice(1)) {
@@ -550,6 +564,7 @@ async function getNetworkInfo(): Promise<NetworkInfo> {
           process: p[0],
           pid: p[1],
           address: p[8].replace(`:${pm[1]}`, ""),
+          exposure: classify(p[8].replace(`:${pm[1]}`, "")),
         });
       }
     }
@@ -568,6 +583,7 @@ async function getNetworkInfo(): Promise<NetworkInfo> {
           process: proc?.[1] || "unknown",
           pid: proc?.[2] || "",
           address: p[3].replace(`:${pm[1]}`, ""),
+          exposure: classify(p[3].replace(`:${pm[1]}`, "")),
         });
       }
     }
@@ -580,7 +596,11 @@ async function getNetworkInfo(): Promise<NetworkInfo> {
 }
 
 /* ------ Security ------ */
-async function getSecurityInfo(openPortsCount: number): Promise<SecurityInfo> {
+async function getSecurityInfo(exposedPorts: PortInfo[], totalPorts: number): Promise<SecurityInfo> {
+  // openPortsCount is the EXPOSED count — loopback and tailnet sockets are not
+  // attack surface for a machine on a default-deny firewall, and counting them
+  // made this warning permanent and therefore invisible.
+  const openPortsCount = exposedPorts.length;
   let firewallEnabled = false;
   let firewallTool = "None";
 
@@ -666,7 +686,20 @@ async function getSecurityInfo(openPortsCount: number): Promise<SecurityInfo> {
   if (sshKeyOnly === false) warnings.push("SSH allows password login — switch to key-only authentication");
   if (rootDisabled === false) warnings.push("SSH permits root login — disable PermitRootLogin");
   if (!autoUpdates) warnings.push("Automatic security updates are not enabled");
-  if (openPortsCount > 10) warnings.push(`${openPortsCount} ports are listening — review and close unnecessary ones`);
+  // Only reachable ports earn a warning, and it names them so the next step is
+  // obvious. The bare count said "review and close unnecessary ones" about 38
+  // sockets that were almost all loopback — advice with nothing actionable in it.
+  if (openPortsCount > 3) {
+    const named = exposedPorts
+      .slice(0, 6)
+      .map((p) => `${p.port} (${p.process})`)
+      .join(", ");
+    warnings.push(
+      `${openPortsCount} of ${totalPorts} listening ports are reachable beyond loopback and the tailnet: ${named}` +
+        (openPortsCount > 6 ? ", and others" : "") +
+        ". Review whether each still needs to be."
+    );
+  }
 
   return {
     firewallEnabled,
@@ -1249,7 +1282,10 @@ export async function GET() {
     getPhysicalCores(),
   ]);
 
-  const security = await getSecurityInfo(network.listeningPorts.length);
+  const security = await getSecurityInfo(
+    network.listeningPorts.filter((p) => p.exposure === "exposed"),
+    network.listeningPorts.length,
+  );
 
   const cpuModel =
     PLATFORM === "darwin"

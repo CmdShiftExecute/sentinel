@@ -131,12 +131,28 @@ export interface NetworkInterface {
   status: "up" | "down";
 }
 
+/** Who can actually reach a listening socket.
+ *
+ *  A raw count of listening sockets is not a measure of exposure, and treating it
+ *  as one produced a permanent red warning on this box: 38 sockets, of which all
+ *  but two were bound to loopback or to the tailnet behind a default-deny firewall.
+ *  A warning that can never clear is a warning he stops reading, so the count that
+ *  drives it is now the EXPOSED one.
+ *
+ *  loopback — 127.0.0.0/8 or ::1. Unreachable from any other machine, full stop.
+ *  tailnet  — bound to the Tailscale address. Reachable only by his own devices.
+ *  exposed  — 0.0.0.0, *, ::, or a LAN address. Reachable from the local network,
+ *             subject to the firewall. THIS is the number worth watching.
+ */
+export type PortExposure = "loopback" | "tailnet" | "exposed";
+
 export interface PortInfo {
   port: number;
   protocol: string;
   process: string;
   pid: string;
   address: string;
+  exposure: PortExposure;
 }
 
 export interface SecurityInfo {

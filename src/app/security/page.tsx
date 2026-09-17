@@ -230,24 +230,24 @@ export default function SecurityPage() {
         <div className="card px-5 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-xs text-txt-secondary">Open Ports</span>
+              <span className="text-xs text-txt-secondary">Reachable Ports</span>
               <div className="data-value text-2xl font-bold text-txt-primary">{sec?.openPortsCount ?? 0}</div>
             </div>
             <StatusBadge
               variant={
-                (sec?.openPortsCount ?? 0) > 15 ? "danger"
-                : (sec?.openPortsCount ?? 0) > 8 ? "warning"
+                (sec?.openPortsCount ?? 0) > 8 ? "danger"
+                : (sec?.openPortsCount ?? 0) > 3 ? "warning"
                 : "success"
               }
               label={
-                (sec?.openPortsCount ?? 0) > 15 ? "High exposure"
-                : (sec?.openPortsCount ?? 0) > 8 ? "Moderate"
+                (sec?.openPortsCount ?? 0) > 8 ? "High exposure"
+                : (sec?.openPortsCount ?? 0) > 3 ? "Moderate"
                 : "Minimal"
               }
             />
           </div>
           <p className="text-[11px] text-txt-muted mt-2">
-            Each listening port increases the attack surface. Review open ports on the Network page.
+            Counts only ports reachable beyond loopback and the tailnet — those are the attack surface. Full list on the Network page.
           </p>
         </div>
       </section>
