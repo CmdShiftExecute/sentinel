@@ -61,6 +61,17 @@ export function Sidebar() {
           <p className="text-[11px] text-txt-muted pl-[18px] truncate">
             {data?.os?.name || "Server"} {data?.os?.version ? `${data.os.version}` : ""}
           </p>
+          {/* Hardware identity. Resolved live from DMI on every poll, never stored - the
+              2026-09-19 SSD transplant made every hardcoded hardware string in the estate
+              wrong in one afternoon, silently. Hover shows the raw vendor identifier. */}
+          {data?.os?.machine && (
+            <p
+              className="text-[11px] text-txt-muted/70 pl-[18px] truncate mt-0.5"
+              title={data.os.machineId ? `Model identifier: ${data.os.machineId}` : undefined}
+            >
+              {data.os.machine}
+            </p>
+          )}
         </div>
 
         <div className="divider-accent mx-5" />

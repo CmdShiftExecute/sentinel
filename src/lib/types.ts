@@ -30,6 +30,10 @@ export interface OsInfo {
   version: string;
   arch: string;
   platform: string;
+  /** Friendly hardware name, resolved live from DMI. e.g. "Mac mini (Mid 2011) Server" */
+  machine?: string;
+  /** The raw vendor model identifier, e.g. "Macmini5,3". Always shown, never guessed. */
+  machineId?: string;
 }
 
 export interface CpuInfo {

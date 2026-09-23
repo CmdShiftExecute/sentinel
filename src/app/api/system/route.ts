@@ -97,7 +97,42 @@ async function getPhysicalCores(): Promise<number | null> {
 }
 
 /* ------ OS Info ------ */
+/* ------ Machine model ------
+ * READ LIVE FROM THE MACHINE, NEVER STORED.
+ * On 2026-09-19 this SSD was transplanted from a Late-2014 Mac mini (Macmini7,1,
+ * i5-4260U, 8 GB) into a Mid-2011 Mac mini Server (Macmini5,3, i7-2635QM quad, 16 GB).
+ * Every dashboard that held a hardcoded hardware string became wrong that afternoon and
+ * nothing errored. So this resolves from /sys/class/dmi/id at request time: the answer
+ * changes by itself the next time the hardware does. The map only makes the identifier
+ * READABLE - an unknown identifier falls through to the raw string rather than a guess. */
+const APPLE_MODEL_NAMES: Record<string, string> = {
+  "Macmini4,1": "Mac mini (Mid 2010)",
+  "Macmini5,1": "Mac mini (Mid 2011)",
+  "Macmini5,2": "Mac mini (Mid 2011)",
+  "Macmini5,3": "Mac mini (Mid 2011) Server",
+  "Macmini6,1": "Mac mini (Late 2012)",
+  "Macmini6,2": "Mac mini (Late 2012) Server",
+  "Macmini7,1": "Mac mini (Late 2014)",
+  "Macmini8,1": "Mac mini (2018)",
+  "Macmini9,1": "Mac mini (M1, 2020)",
+};
+
+async function getMachine(): Promise<{ machine?: string; machineId?: string }> {
+  if (PLATFORM === "darwin") {
+    const id = (await run("sysctl -n hw.model 2>/dev/null")).trim();
+    return id ? { machineId: id, machine: APPLE_MODEL_NAMES[id] || id } : {};
+  }
+  const id = (await run("cat /sys/class/dmi/id/product_name 2>/dev/null")).trim();
+  const vendor = (await run("cat /sys/class/dmi/id/sys_vendor 2>/dev/null")).trim();
+  if (!id) return {};
+  const friendly = APPLE_MODEL_NAMES[id];
+  if (friendly) return { machineId: id, machine: friendly };
+  // Unknown identifier: show what the machine actually says, prefixed by its vendor.
+  return { machineId: id, machine: vendor && !id.startsWith(vendor) ? `${vendor} ${id}` : id };
+}
+
 async function getOsInfo(): Promise<OsInfo> {
+  const hw = await getMachine();
   if (PLATFORM === "darwin") {
     const out = await run("sw_vers");
     return {
@@ -105,6 +140,7 @@ async function getOsInfo(): Promise<OsInfo> {
       version: out.match(/ProductVersion:\s*(.+)/)?.[1]?.trim() || os.release(),
       arch: os.arch(),
       platform: PLATFORM,
+      ...hw,
     };
   }
   const out = await run("cat /etc/os-release 2>/dev/null");
@@ -113,6 +149,7 @@ async function getOsInfo(): Promise<OsInfo> {
     version: out.match(/VERSION_ID="(.+)"/)?.[1] || os.release(),
     arch: os.arch(),
     platform: PLATFORM,
+    ...hw,
   };
 }
 
