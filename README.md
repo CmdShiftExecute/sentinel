@@ -416,7 +416,6 @@ The version in `package.json` is the source of truth; the badge at the top of th
 ### 0.3.0 — 21 Jul 2026
 
 - Adaptive AC and battery views, history graphs, network device discovery, theme and accent palettes, and the motion layer.
-- Warm-standby backup status card on the overview and Services pages.
 - Device scan trusts only confirmed neighbours.
 
 ### 0.2.0 — 18 Apr 2026

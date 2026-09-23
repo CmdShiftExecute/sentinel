@@ -306,3 +306,34 @@ export interface UptimePoint {
   timestamp: number;
   up: boolean;
 }
+
+/** One row of the task manager (/api/processes). Nullable fields could not be
+ *  read for that process (or that platform) — they are unknown, not zero. */
+export interface ProcessRow {
+  pid: number;
+  name: string;
+  user: string;
+  state: string;
+  /** Live CPU over the sampling window, percent of one core (top's convention). */
+  cpu: number;
+  memPct: number;
+  /** Resident memory, bytes. */
+  rss: number;
+  /** Swapped-out memory, bytes. */
+  swap: number | null;
+  threads: number | null;
+  /** Disk read+write, bytes per second. */
+  ioRate: number | null;
+  command: string;
+}
+
+export interface ProcessesResponse {
+  ok: boolean;
+  /** "proc" = live two-sample reading; "ps" = lifetime averages (macOS). */
+  source?: "proc" | "ps";
+  sampledMs?: number;
+  cores?: number;
+  memTotal?: number;
+  rows: ProcessRow[];
+  error?: string;
+}

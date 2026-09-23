@@ -870,3 +870,20 @@ button:active {
   .snap-y.snap-mandatory { height: 100dvh !important; }
   .snap-y.snap-mandatory > section { height: 100dvh !important; }
 }
+
+/* Deep-link landing (Overview gauge -> /hardware#section): a brief accent ring
+   so the eye finds the section it was sent to. Outline, not border, so the
+   layout never shifts. */
+@keyframes anchor-flash {
+  0%   { outline-color: color-mix(in oklab, var(--accent) 70%, transparent); }
+  100% { outline-color: transparent; }
+}
+.anchor-flash {
+  outline: 2px solid transparent;
+  outline-offset: 6px;
+  border-radius: 10px;
+  animation: anchor-flash 1.8s ease-out 0.25s both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .anchor-flash { animation: none; outline-color: color-mix(in oklab, var(--accent) 50%, transparent); }
+}

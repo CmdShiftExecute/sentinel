@@ -5,7 +5,6 @@ import clsx from "clsx";
 import useSWR from "swr";
 import { useSystemData } from "@/hooks/use-system-data";
 import { StatusBadge } from "@/components/status-badge";
-import { WarmStandbyCard } from "@/components/warm-standby-card";
 import { cronToHuman, fmtStamp, relativeTime, TZ_LABEL } from "@/lib/utils";
 import type { ManagedService, ScheduledJob } from "@/lib/types";
 import {
@@ -53,8 +52,6 @@ export default function ServicesPage() {
           </p>
         </div>
       )}
-
-      <WarmStandbyCard />
 
       <ScheduledSection jobs={s?.scheduled} loading={!s} />
       <ServicesSection services={s?.managed} loading={!s} />

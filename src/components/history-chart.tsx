@@ -95,6 +95,7 @@ export function HistoryChart({
   domain,
   formatValue,
   formatAxis,
+  step,
 }: {
   data: Record<string, number | null>[];
   series: SeriesDef[];
@@ -104,10 +105,29 @@ export function HistoryChart({
   domain?: [number | "auto" | "dataMin", number | "auto" | "dataMax"];
   formatValue?: (v: number) => string;
   formatAxis?: (v: number) => string;
+  /** Fit the Y axis to the data in view: floor at the lowest reading and cap at
+   *  the highest, each rounded out to a multiple of `step`, with a gridline and
+   *  label at every step. Overrides `domain`. Used where the interesting signal
+   *  is the swing, not the distance from zero (temperature). */
+  step?: number;
 }) {
   const gradientBase = useId().replace(/:/g, "");
   const fmt = formatValue ?? ((v: number) => `${Math.round(v * 10) / 10}${unit}`);
   const fmtAxis = formatAxis ?? fmt;
+
+  let yDomain = domain ?? [0, "auto"];
+  let yTicks: number[] | undefined;
+  if (step) {
+    const vals = data.flatMap((d) => series.map((s) => d[s.key])).filter((v): v is number => typeof v === "number" && Number.isFinite(v));
+    if (vals.length) {
+      const lo = Math.floor(Math.min(...vals) / step) * step;
+      let hi = Math.ceil(Math.max(...vals) / step) * step;
+      if (hi === lo) hi = lo + step;
+      yDomain = [lo, hi];
+      yTicks = [];
+      for (let v = lo; v <= hi; v += step) yTicks.push(v);
+    }
+  }
 
   if (data.length < 2) {
     return (
@@ -149,7 +169,10 @@ export function HistoryChart({
             tickLine={false}
             axisLine={false}
             width={58}
-            domain={domain ?? [0, "auto"]}
+            domain={yDomain}
+            ticks={yTicks}
+            interval={yTicks ? 0 : "preserveEnd"}
+            allowDataOverflow={!!yTicks}
           />
           <Tooltip
             labelFormatter={(ts) => fullTime(ts as number)}

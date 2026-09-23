@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { TaskManager } from "@/components/task-manager";
 import { useSystemData } from "@/hooks/use-system-data";
 import { Gauge } from "@/components/gauge";
 import { StatusBadge } from "@/components/status-badge";
@@ -24,6 +25,7 @@ import {
 export default function HardwarePage() {
   const { data } = useSystemData();
   const b = data?.battery;
+  useHashFocus();
 
   return (
     <div className="space-y-6">
@@ -77,48 +79,8 @@ export default function HardwarePage() {
         </section>
       )}
 
-      {/* Top Processes */}
-      <section className="space-y-3">
-        <h2 className="section-label">Top Processes</h2>
-        <div className="card-static overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left min-w-[500px]">
-              <thead>
-                <tr className="border-b border-line-dim">
-                  <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-txt-muted bg-surface-elevated">Process</th>
-                  <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-txt-muted bg-surface-elevated text-right">CPU %</th>
-                  <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-txt-muted bg-surface-elevated text-right">MEM %</th>
-                  <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-txt-muted bg-surface-elevated">User</th>
-                  <th className="px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wider text-txt-muted bg-surface-elevated text-right">PID</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data?.processes && data.processes.length > 0 ? (
-                  data.processes.map((p, i) => (
-                    <tr key={i} className="border-b border-line-dim last:border-0 hover:bg-surface-hover transition-colors">
-                      <td className="px-4 py-2 text-sm font-semibold text-txt-primary">{p.name}</td>
-                      <td className="px-4 py-2 text-right">
-                        <span className={`data-value text-xs font-semibold ${p.cpu > 50 ? "text-danger" : p.cpu > 20 ? "text-warning" : "text-txt-secondary"}`}>
-                          {p.cpu.toFixed(1)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2 text-right">
-                        <span className={`data-value text-xs font-semibold ${p.memory > 50 ? "text-danger" : p.memory > 20 ? "text-warning" : "text-txt-secondary"}`}>
-                          {p.memory.toFixed(1)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2 text-xs text-txt-muted">{p.user}</td>
-                      <td className="px-4 py-2 text-right text-xs text-txt-muted data-value">{p.pid}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr><td colSpan={5} className="px-4 py-3 text-xs text-txt-muted">{data ? "No processes" : "Loading..."}</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
+      {/* Task Manager — the same live, sortable table as the Overview */}
+      <TaskManager id="processes" />
     </div>
   );
 }
@@ -133,7 +95,7 @@ function PowerCoolingSection({ data }: { data: ReturnType<typeof useSystemData>[
   const headroom = t?.cpu != null && t?.throttleAt ? Math.max(0, Math.round(t.throttleAt - t.cpu)) : null;
 
   return (
-    <section className="space-y-3">
+    <section id="power" className="space-y-3 scroll-mt-16 md:scroll-mt-4">
       <h2 className="section-label">Power & Cooling</h2>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {/* Power source */}
@@ -218,7 +180,7 @@ function PowerCoolingSection({ data }: { data: ReturnType<typeof useSystemData>[
 function BatterySection({ data }: { data: ReturnType<typeof useSystemData>["data"] }) {
   const b = data?.battery;
   return (
-    <section className="space-y-3">
+    <section id="battery" className="space-y-3 scroll-mt-16 md:scroll-mt-4">
       <h2 className="section-label">Battery & Power</h2>
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4">
         <div className="card flex flex-col items-center justify-center py-6">
@@ -263,7 +225,7 @@ function TemperatureSection({ data }: { data: ReturnType<typeof useSystemData>["
   const chartData = samples.map((s) => ({ ts: s.ts, temp: s.temp }));
 
   return (
-    <section className="space-y-3">
+    <section id="temperature" className="space-y-3 scroll-mt-16 md:scroll-mt-4">
       <h2 className="section-label">Temperature</h2>
       <div className="card px-5 py-4">
         <div className="flex items-center gap-6 flex-wrap">
@@ -343,9 +305,9 @@ function TemperatureSection({ data }: { data: ReturnType<typeof useSystemData>["
             data={chartData}
             series={[{ key: "temp", name: "CPU package", color: "var(--accent)" }]}
             range={range}
-            height={160}
+            height={300}
             unit="°"
-            domain={[20, "auto"]}
+            step={5}
           />
         </div>
       </div>
@@ -361,7 +323,7 @@ function CpuCard({ data }: { data: ReturnType<typeof useSystemData>["data"] }) {
   const perCore = data?.cpu.perCore ?? [];
 
   return (
-    <div className="card px-5 py-4">
+    <div id="cpu" className="card px-5 py-4 scroll-mt-16 md:scroll-mt-4">
       <h3 className="text-xs font-semibold text-txt-secondary mb-3">Processor</h3>
       <div className="space-y-3">
         <Detail label="Model" value={data?.cpu.model || "—"} />
@@ -424,7 +386,7 @@ function MemoryCard({ data }: { data: ReturnType<typeof useSystemData>["data"] }
   const chartData = samples.map((s) => ({ ts: s.ts, mem: s.mem_pct, swap: s.swap_pct }));
 
   return (
-    <div className="card px-5 py-4">
+    <div id="memory" className="scroll-mt-16 md:scroll-mt-4 card px-5 py-4">
       <h3 className="text-xs font-semibold text-txt-secondary mb-3">Memory</h3>
       <div className="space-y-3">
         <div className="grid grid-cols-3 gap-x-4">
@@ -498,7 +460,7 @@ function DiskSection({ data }: { data: ReturnType<typeof useSystemData>["data"] 
   const io = data?.diskIo;
 
   return (
-    <section className="space-y-3">
+    <section id="disk" className="space-y-3 scroll-mt-16 md:scroll-mt-4">
       <h2 className="section-label">Disk</h2>
       <div className="card px-5 py-4">
         <div className="flex flex-col md:flex-row items-start gap-6">
@@ -614,4 +576,27 @@ function Detail({ label, value, children }: { label: string; value?: string; chi
       {children || <div className="data-value text-sm font-semibold text-txt-primary">{value}</div>}
     </div>
   );
+}
+
+/* ==== Deep links from the Overview gauges (/hardware#cpu, #memory, #disk,
+ * #temperature, #battery, #processes). The browser's own hash jump fires
+ * before the live data has sized the sections above the target, so it can
+ * land short; this re-scrolls once the page has settled and flashes the
+ * target so the eye finds it. ==== */
+function useHashFocus() {
+  useEffect(() => {
+    const go = () => {
+      const id = decodeURIComponent(window.location.hash.slice(1));
+      const el = id ? document.getElementById(id) : null;
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      el.classList.remove("anchor-flash");
+      void el.offsetWidth; // restart the animation on a repeat visit
+      el.classList.add("anchor-flash");
+    };
+    go();
+    const t = window.setTimeout(go, 450);
+    window.addEventListener("hashchange", go);
+    return () => { window.clearTimeout(t); window.removeEventListener("hashchange", go); };
+  }, []);
 }

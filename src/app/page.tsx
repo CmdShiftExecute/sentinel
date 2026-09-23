@@ -8,8 +8,8 @@ import { formatUptime, formatBytes, batteryColor, tempColor, gradeColor, fmtCloc
 import Link from "next/link";
 import clsx from "clsx";
 import { useState } from "react";
-import { WarmStandbyCard } from "@/components/warm-standby-card";
 import { EstateHealthPanel } from "@/components/estate-health-panel";
+import { TaskManager } from "@/components/task-manager";
 
 export default function OverviewPage() {
   const { data, isLoading } = useSystemData();
@@ -33,31 +33,29 @@ export default function OverviewPage() {
 
       {/* System Vitals — 4 Gauges */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <GaugeCard label="CPU" value={data?.cpu.usage ?? 0}
+        <GaugeCard label="CPU" href="/hardware#cpu" value={data?.cpu.usage ?? 0}
           sublabel={data ? cpuSublabel(data.cpu) : "—"} color="var(--accent)" />
-        <GaugeCard label="Memory" value={data?.memory.usage ?? 0}
+        <GaugeCard label="Memory" href="/hardware#memory" value={data?.memory.usage ?? 0}
           sublabel={data ? `${formatBytes(data.memory.used)} / ${formatBytes(data.memory.total)}` : "—"} color="var(--accent-dim)" />
-        <GaugeCard label="Disk" value={data?.disk.usage ?? 0}
+        <GaugeCard label="Disk" href="/hardware#disk" value={data?.disk.usage ?? 0}
           sublabel={data ? `${data.disk.used} / ${data.disk.total}` : "—"}
           color={(data?.disk.usage ?? 0) > 85 ? "var(--warning)" : "var(--accent)"} />
         {data?.battery.present ? (
-          <GaugeCard label="Battery" value={data.battery.level}
+          <GaugeCard label="Battery" href="/hardware#battery" value={data.battery.level}
             sublabel={data.battery.powerSource || "—"}
             color={batteryColor(data.battery.level)} />
         ) : (
-          <GaugeCard label="CPU Temp" value={data?.temperature.cpu ?? 0} unit="°"
+          <GaugeCard label="CPU Temp" href="/hardware#temperature" value={data?.temperature.cpu ?? 0} unit="°"
             sublabel={data?.temperature.fanRpm ? `Fan ${data.temperature.fanRpm} RPM` : data?.temperature.label ?? "—"}
             color={data ? tempColor(data.temperature.cpu) : "var(--accent)"} />
         )}
       </div>
 
+      {/* Task Manager — what is costing the machine right now, sortable */}
+      <TaskManager />
+
       {/* Estate Health — the same 45 checks Pulse reports, in one panel */}
       <EstateHealthPanel />
-
-      {/* Warm-Standby Backup — this box to its standby */}
-      <div>
-        <WarmStandbyCard />
-      </div>
 
       {/* Detail Row 1: Connectivity (or Battery) / Thermals / Network */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -136,13 +134,17 @@ function StatusStrip({ data, loading }: { data: ReturnType<typeof useSystemData>
 }
 
 /* ---- Gauge Card Wrapper ---- */
-function GaugeCard({ label, value, sublabel, color, unit }: {
-  label: string; value: number; sublabel: string; color: string; unit?: string;
+// Each gauge opens the Hardware section that explains it (/hardware#cpu etc.);
+// the Hardware page scrolls to and briefly highlights that section.
+function GaugeCard({ label, value, sublabel, color, unit, href }: {
+  label: string; value: number; sublabel: string; color: string; unit?: string; href: string;
 }) {
   return (
-    <div className="card flex flex-col items-center py-3 md:py-4 px-2 md:px-3">
+    <Link href={href} aria-label={`${label} details`}
+      className="card group relative flex flex-col items-center py-3 md:py-4 px-2 md:px-3">
+      <span className="absolute top-2.5 right-2.5"><ArrowIcon /></span>
       <Gauge value={value} label={label} sublabel={sublabel} color={color} size={100} unit={unit} />
-    </div>
+    </Link>
   );
 }
 
