@@ -10,6 +10,8 @@ import clsx from "clsx";
 import { useState } from "react";
 import { EstateHealthPanel } from "@/components/estate-health-panel";
 import { TaskManager } from "@/components/task-manager";
+import useSWR from "swr";
+import type { PowerResponse } from "@/lib/types";
 
 export default function OverviewPage() {
   const { data, isLoading } = useSystemData();
@@ -98,6 +100,8 @@ export default function OverviewPage() {
 
 /* ---- Status Strip ---- */
 function StatusStrip({ data, loading }: { data: ReturnType<typeof useSystemData>["data"]; loading: boolean }) {
+  const { data: power } = useSWR<PowerResponse>("/api/power", (u: string) => fetch(u).then((r) => r.json()), { refreshInterval: 10_000 });
+  const wall = power?.ok ? power.live?.wallW : null;
   if (loading || !data) {
     return (
       <div className="card-static px-4 py-3 flex items-center gap-4">
@@ -129,6 +133,17 @@ function StatusStrip({ data, loading }: { data: ReturnType<typeof useSystemData>
           {data.loadAverage?.map(v => v.toFixed(2)).join("  ") || "—"}
         </span>
       </span>
+      {wall != null && (
+        <>
+          <Sep />
+          <Link href="/hardware#energy" className="text-xs text-txt-secondary hover:text-accent transition-colors" title="Estimated draw from the wall outlet. Click for energy use and cost.">
+            Power <span className="data-value text-txt-primary font-semibold">{Math.round(wall)} W</span>
+            {power?.last24h?.costPerDay != null && power.tariff && (
+              <span className="text-txt-muted"> · {power.tariff.currency} {power.last24h.costPerDay.toFixed(2)}/day</span>
+            )}
+          </Link>
+        </>
+      )}
     </div>
   );
 }

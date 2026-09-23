@@ -244,6 +244,19 @@ Skip this step if you don't need remote power control — everything else works 
 
 ---
 
+## Power & Energy Setup (optional)
+
+Sentinel can show what the machine draws from the wall and what it costs per day and month. The sensors involved are root-only, so a small root service reads them and publishes world-readable files that the dashboard reads:
+
+```bash
+collectors/install-power-sampler.sh   # installs node-power-sampler.service (needs sudo)
+```
+
+- **Intel Mac minis** (Linux or macOS-on-Intel with the `applesmc` driver): DC-in power is measured by the SMC (`PD0R`). This is the whole machine after its internal power supply.
+- **Any Intel machine:** CPU package power is read from RAPL. It also fills the CPU-power figure, which a non-root reader cannot see on current kernels.
+- **Wall draw** = DC-in ÷ `power.psuEfficiency` (default 0.85). It is labelled as an estimate everywhere it appears.
+- **Cost:** set `power.tariff` in `sentinel.config.json` (slabs, per-kWh surcharge, VAT, your household's monthly kWh). See `sentinel.config.example.json` for a worked example. With no slabs set, cost is hidden.
+
 ## Configuration
 
 Sentinel reads from `sentinel.config.json` at the project root. This file is gitignored — your personal paths and service names stay local and are never committed.

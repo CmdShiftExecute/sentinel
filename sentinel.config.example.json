@@ -39,5 +39,33 @@
   },
   "estate": {
     "pulseUrl": ""
+  },
+  "power": {
+    "psuEfficiency": 0.85,
+    "tariff": {
+      "currency": "AED",
+      "slabs": [
+        {
+          "upTo": 2000,
+          "rate": 0.23
+        },
+        {
+          "upTo": 4000,
+          "rate": 0.28
+        },
+        {
+          "upTo": 6000,
+          "rate": 0.32
+        },
+        {
+          "upTo": null,
+          "rate": 0.38
+        }
+      ],
+      "surcharge": 0.06,
+      "vatPct": 5,
+      "householdMonthlyKwh": 0,
+      "source": "DEWA residential slab tariff + electricity fuel surcharge (September 2026), 5% VAT \u2014 dewa.gov.ae/en/consumer/billing/slab-tariff"
+    }
   }
 }

@@ -337,3 +337,39 @@ export interface ProcessesResponse {
   rows: ProcessRow[];
   error?: string;
 }
+
+/** /api/power — see src/app/api/power/route.ts. DC watts are measured (Apple
+ *  SMC); wall watts are DC / psuEfficiency and therefore an estimate. */
+export interface PowerDay {
+  /** Local calendar day, YYYY-MM-DD. */
+  date: string;
+  partial: boolean;
+  avgW: number;
+  kwh: number;
+  cost: number | null;
+  /** Share of the day the sampler actually recorded, 0..1. */
+  coverage: number;
+}
+
+export interface PowerStats {
+  avgW: number;
+  peakW: number;
+  kwhPerDay: number;
+  costPerDay: number | null;
+  coverageHours: number;
+}
+
+export interface PowerResponse {
+  ok: boolean;
+  reason?: string;
+  error?: string;
+  live: { ts: number; stale: boolean; dcW: number | null; wallW: number | null; cpuW: number | null; source: string } | null;
+  efficiency: number;
+  tariff: { currency: string; ratePerKwh: number; source: string; householdMonthlyKwh: number } | null;
+  last24h: PowerStats | null;
+  avg30d: PowerStats | null;
+  daysRecorded: number;
+  since: number | null;
+  days: PowerDay[];
+  series: { ts: number; wall: number; peak: number; cpu: number | null }[];
+}

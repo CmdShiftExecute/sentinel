@@ -177,6 +177,19 @@ def main():
     prev_rapl = state.get("rapl")
     if rapl is not None and prev_rapl is not None and dt > 0 and rapl > prev_rapl:
         power = round((rapl - prev_rapl) / 1_000_000 / dt, 1)
+    # RAPL is root-only on current kernels, so this user usually reads nothing
+    # above. The root power sampler (collectors/power-sampler.py) publishes the
+    # same CPU figure plus whole-machine DC-in; read it from there.
+    dc_w = None
+    try:
+        with open("/run/node-power/now.json") as f:
+            pw = json.load(f)
+        if pw.get("available") and now_ts - pw.get("ts", 0) < 15:
+            if power is None and pw.get("cpu_w") is not None:
+                power = round(pw["cpu_w"], 1)
+            dc_w = pw.get("dc_w")
+    except (OSError, ValueError):
+        pass
 
     sample = {
         "ts": int(now_ts),
@@ -190,6 +203,7 @@ def main():
         "temp_cores": sens["cores"],
         "fan": sens["fan"],
         "power_w": power,
+        "dc_w": dc_w,
         "rx_rate": rate(state.get("rx"), net[0] if net else None, dt),
         "tx_rate": rate(state.get("tx"), net[1] if net else None, dt),
         "disk_read_rate": rate(state.get("disk_r"), disk[0] if disk else None, dt),

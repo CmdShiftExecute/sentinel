@@ -63,3 +63,6 @@ sentinel.config.json
 # Host-specific job inventory written by server-ops/bin/schedule-collect.py.
 # Contains real unit names and paths — never commit (repo is public).
 public/scheduled-jobs.json
+
+# Python bytecode
+__pycache__/

@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { TaskManager } from "@/components/task-manager";
+import { PowerPanel } from "@/components/power-panel";
+import useSWR from "swr";
+import type { PowerResponse } from "@/lib/types";
 import { useSystemData } from "@/hooks/use-system-data";
 import { Gauge } from "@/components/gauge";
 import { StatusBadge } from "@/components/status-badge";
@@ -93,6 +96,7 @@ function PowerCoolingSection({ data }: { data: ReturnType<typeof useSystemData>[
       ? Math.round(((t.fanRpm - t.fanMin) / (t.fanMax - t.fanMin)) * 100)
       : null;
   const headroom = t?.cpu != null && t?.throttleAt ? Math.max(0, Math.round(t.throttleAt - t.cpu)) : null;
+  const { data: power } = useSWR<PowerResponse>("/api/power", (u: string) => fetch(u).then((r) => r.json()), { refreshInterval: 5_000 });
 
   return (
     <section id="power" className="space-y-3 scroll-mt-16 md:scroll-mt-4">
@@ -108,12 +112,20 @@ function PowerCoolingSection({ data }: { data: ReturnType<typeof useSystemData>[
           <div className="text-[11px] text-txt-muted">
             Mains-powered, no battery installed
           </div>
-          {t?.cpuPowerW != null && (
-            <div className="mt-2.5 pt-2.5 border-t border-line-dim flex items-baseline gap-1.5">
-              <span className="data-value text-xl font-bold text-accent">{t.cpuPowerW}</span>
-              <span className="text-[11px] text-txt-muted">W CPU package draw</span>
+          <a href="#energy" className="mt-2.5 pt-2.5 border-t border-line-dim block group">
+            <div className="flex items-baseline gap-1.5">
+              <span className="data-value text-2xl font-bold text-accent">
+                {power?.live?.wallW != null ? <AnimatedNumber value={Math.round(power.live.wallW)} /> : "—"}
+              </span>
+              <span className="text-[11px] text-txt-muted">W from the wall (est.)</span>
             </div>
-          )}
+            <div className="text-[10px] text-txt-muted mt-0.5">
+              {power?.live?.dcW != null ? `${power.live.dcW.toFixed(1)} W DC measured` : "DC-in unavailable"}
+              {t?.cpuPowerW != null && ` · CPU ${t.cpuPowerW} W`}
+              {power?.last24h?.costPerDay != null && power.tariff && ` · ${power.tariff.currency} ${power.last24h.costPerDay.toFixed(2)}/day`}
+              <span className="text-accent group-hover:underline"> · details ↓</span>
+            </div>
+          </a>
         </div>
 
         {/* Fan */}
@@ -171,6 +183,9 @@ function PowerCoolingSection({ data }: { data: ReturnType<typeof useSystemData>[
             />
           </div>
         </div>
+      </div>
+      <div id="energy" className="scroll-mt-16 md:scroll-mt-4">
+        <PowerPanel />
       </div>
     </section>
   );

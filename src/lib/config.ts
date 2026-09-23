@@ -23,6 +23,30 @@ export interface SentinelConfig {
   hardware: { showBattery: boolean };
   network: { knownDevices: KnownDevices };
   browserAgent: { vncUrl: string; agentScript: string };
+  power: PowerConfig;
+}
+
+/** One electricity price band: kWh up to `upTo` per month (null = no ceiling). */
+export interface TariffSlab { upTo: number | null; rate: number }
+
+export interface PowerConfig {
+  /** DC-in (measured) divided by this gives wall draw. The internal supply's
+   *  real efficiency is unknown; 0.85 is a typical mid-load figure. Calibrate
+   *  it against a metering smart plug if you have one. */
+  psuEfficiency: number;
+  tariff: {
+    currency: string;
+    /** Progressive monthly slabs. Empty = no cost shown. */
+    slabs: TariffSlab[];
+    /** Per-kWh surcharge added to every slab (e.g. DEWA fuel surcharge). */
+    surcharge: number;
+    vatPct: number;
+    /** Your whole home's monthly kWh (from a bill). It decides which slab the
+     *  server's extra kWh fall into. 0 = assume the first slab. */
+    householdMonthlyKwh: number;
+    /** Where the numbers came from, shown on hover. */
+    source: string;
+  };
 }
 
 const DEFAULTS: SentinelConfig = {
@@ -33,6 +57,10 @@ const DEFAULTS: SentinelConfig = {
   hardware: { showBattery: true },
   network: { knownDevices: { byMac: {}, byIp: {} } },
   browserAgent: { vncUrl: "", agentScript: "" },
+  power: {
+    psuEfficiency: 0.85,
+    tariff: { currency: "", slabs: [], surcharge: 0, vatPct: 0, householdMonthlyKwh: 0, source: "" },
+  },
 };
 
 const CONFIG_PATH = path.join(process.cwd(), "sentinel.config.json");

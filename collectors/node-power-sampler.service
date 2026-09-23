@@ -1,0 +1,27 @@
+# Sentinel power sampler — installed by collectors/install-power-sampler.sh.
+# System service (runs as root): the SMC and RAPL sensors are root-only.
+# It writes /run/node-power/now.json and /var/lib/node-power/minutes.jsonl,
+# both world-readable, and nothing else.
+[Unit]
+Description=Sentinel power sampler (SMC DC-in + RAPL CPU power)
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /usr/local/sbin/sentinel-power-sampler
+Restart=on-failure
+RestartSec=15
+Nice=10
+RuntimeDirectory=node-power
+RuntimeDirectoryMode=0755
+RuntimeDirectoryPreserve=yes
+StateDirectory=node-power
+StateDirectoryMode=0755
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes
+MemoryMax=64M
+
+[Install]
+WantedBy=multi-user.target

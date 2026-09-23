@@ -291,6 +291,13 @@ let prevRaplEnergy = 0;
 let prevRaplTime = 0;
 
 async function getCpuPowerW(): Promise<number | null> {
+  // Preferred source: the root power sampler (collectors/power-sampler.py).
+  // Since the CVE-2020-8694 fix the RAPL counter is root-only, so the direct
+  // read below returns nothing for this user and the tile sat blank.
+  try {
+    const n = JSON.parse(fs.readFileSync("/run/node-power/now.json", "utf8"));
+    if (n.available && n.cpu_w != null && Date.now() / 1000 - n.ts < 15) return Math.round(n.cpu_w * 10) / 10;
+  } catch { /* sampler not installed: fall through to a direct read */ }
   const raw = await run("cat /sys/class/powercap/intel-rapl:0/energy_uj 2>/dev/null");
   if (!raw) return null;
   const energy = parseInt(raw);

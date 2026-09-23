@@ -11,6 +11,7 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  ReferenceLine,
 } from "recharts";
 import type { HistorySample } from "@/app/api/history/route";
 
@@ -96,6 +97,7 @@ export function HistoryChart({
   formatValue,
   formatAxis,
   step,
+  reference,
 }: {
   data: Record<string, number | null>[];
   series: SeriesDef[];
@@ -110,6 +112,8 @@ export function HistoryChart({
    *  label at every step. Overrides `domain`. Used where the interesting signal
    *  is the swing, not the distance from zero (temperature). */
   step?: number;
+  /** A dashed horizontal marker, e.g. a 30-day average to compare against. */
+  reference?: { y: number; label: string };
 }) {
   const gradientBase = useId().replace(/:/g, "");
   const fmt = formatValue ?? ((v: number) => `${Math.round(v * 10) / 10}${unit}`);
@@ -119,6 +123,7 @@ export function HistoryChart({
   let yTicks: number[] | undefined;
   if (step) {
     const vals = data.flatMap((d) => series.map((s) => d[s.key])).filter((v): v is number => typeof v === "number" && Number.isFinite(v));
+    if (reference) vals.push(reference.y);
     if (vals.length) {
       const lo = Math.floor(Math.min(...vals) / step) * step;
       let hi = Math.ceil(Math.max(...vals) / step) * step;
@@ -174,6 +179,15 @@ export function HistoryChart({
             interval={yTicks ? 0 : "preserveEnd"}
             allowDataOverflow={!!yTicks}
           />
+          {reference && (
+            <ReferenceLine
+              y={reference.y}
+              stroke="var(--text-muted)"
+              strokeDasharray="4 4"
+              ifOverflow="extendDomain"
+              label={{ value: reference.label, position: "insideTopLeft", fill: "var(--text-muted)", fontSize: 10 }}
+            />
+          )}
           <Tooltip
             labelFormatter={(ts) => fullTime(ts as number)}
             formatter={(value, name) => [fmt(value as number), name as string]}
