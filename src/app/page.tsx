@@ -10,6 +10,7 @@ import clsx from "clsx";
 import { useState } from "react";
 import { EstateHealthPanel } from "@/components/estate-health-panel";
 import { TaskManager } from "@/components/task-manager";
+import { ThrottleFlag } from "@/components/throttle-flag";
 import useSWR from "swr";
 import type { PowerResponse } from "@/lib/types";
 
@@ -49,7 +50,8 @@ export default function OverviewPage() {
         ) : (
           <GaugeCard label="CPU Temp" href="/hardware#temperature" value={data?.temperature.cpu ?? 0} unit="°"
             sublabel={data?.temperature.fanRpm ? `Fan ${data.temperature.fanRpm} RPM` : data?.temperature.label ?? "—"}
-            color={data ? tempColor(data.temperature.cpu) : "var(--accent)"} />
+            color={data ? tempColor(data.temperature.cpu) : "var(--accent)"}
+            extra={<ThrottleFlag t={data?.temperature.throttling} />} />
         )}
       </div>
 
@@ -151,14 +153,15 @@ function StatusStrip({ data, loading }: { data: ReturnType<typeof useSystemData>
 /* ---- Gauge Card Wrapper ---- */
 // Each gauge opens the Hardware section that explains it (/hardware#cpu etc.);
 // the Hardware page scrolls to and briefly highlights that section.
-function GaugeCard({ label, value, sublabel, color, unit, href }: {
-  label: string; value: number; sublabel: string; color: string; unit?: string; href: string;
+function GaugeCard({ label, value, sublabel, color, unit, href, extra }: {
+  label: string; value: number; sublabel: string; color: string; unit?: string; href: string; extra?: React.ReactNode;
 }) {
   return (
     <Link href={href} aria-label={`${label} details`}
       className="card group relative flex flex-col items-center py-3 md:py-4 px-2 md:px-3">
       <span className="absolute top-2.5 right-2.5"><ArrowIcon /></span>
       <Gauge value={value} label={label} sublabel={sublabel} color={color} size={100} unit={unit} />
+      {extra && <div className="mt-1">{extra}</div>}
     </Link>
   );
 }
@@ -242,7 +245,10 @@ function ThermalsCard({ data }: { data: ReturnType<typeof useSystemData>["data"]
         />
       </div>
       <div className="grid grid-cols-3 gap-x-3">
-        <KV label="Fan RPM" value={t?.fanRpm ? `${t.fanRpm}` : "—"} />
+        <div>
+          <KV label="Fan RPM" value={t?.fanRpm ? `${t.fanRpm}` : "—"} />
+          <div className="mt-0.5"><ThrottleFlag t={t?.throttling} /></div>
+        </div>
         <KV label="CPU power" value={t?.cpuPowerW != null ? `${t.cpuPowerW}W` : "—"} />
         <KV label="Headroom" value={headroom !== null ? `${headroom}°` : "—"} />
       </div>

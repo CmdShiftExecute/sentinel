@@ -12,6 +12,14 @@ both sensors it reads are root-only:
     energy. Root-only on current kernels (CVE-2020-8694), which is why a
     user-level reader silently gets nothing.
 
+  * Intel thermal MSRs (/dev/cpu/N/msr, root-only): IA32_THERM_STATUS
+    (0x19C, per core) and IA32_PACKAGE_THERM_STATUS (0x1B1) carry live
+    "thermal throttling now" (bit 0) and "power-limited now" (bit 10)
+    flags, and IA32_TEMPERATURE_TARGET (0x1A2) gives TjMax and the TCC
+    offset, i.e. the temperature where hardware throttling really starts.
+    This is the CPU's own answer to "is it throttling", not an inference
+    from temperature.
+
 It writes two files and nothing else. Readers (the Sentinel dashboard, the
 metrics sampler) read these files and never touch the sensors:
 
@@ -100,6 +108,44 @@ class Rapl:
         return round(d / 1e6 / (now - prev[1]), 2)
 
 
+class Msr:
+    """Live thermal-throttle and power-limit flags from the CPU itself."""
+
+    def __init__(self):
+        self.fds = {}
+        for d in sorted(os.listdir("/dev/cpu")) if os.path.isdir("/dev/cpu") else []:
+            if d.isdigit():
+                try:
+                    self.fds[int(d)] = os.open(f"/dev/cpu/{d}/msr", os.O_RDONLY)
+                except OSError:
+                    pass
+        self.tjmax = self.offset = None
+        if 0 in self.fds:
+            try:
+                t = self._rd(0, 0x1A2)
+                self.tjmax, self.offset = (t >> 16) & 0xFF, (t >> 24) & 0x3F
+            except OSError:
+                pass
+
+    def _rd(self, cpu, reg):
+        return struct.unpack("<Q", os.pread(self.fds[cpu], 8, reg))[0]
+
+    def status(self):
+        if not self.fds:
+            return None
+        try:
+            pkg = self._rd(0, 0x1B1)
+            cores = [self._rd(c, 0x19C) for c in self.fds]
+        except OSError:
+            return None
+        return {
+            "thermal": bool(pkg & 1) or any(c & 1 for c in cores),
+            "power_limit": bool(pkg & (1 << 10)) or any(c & (1 << 10) for c in cores),
+            "tjmax": self.tjmax,
+            "tcc_offset": self.offset,
+        }
+
+
 def write_atomic(path, text):
     tmp = path + ".tmp"
     with open(tmp, "w") as f:
@@ -128,9 +174,14 @@ class Minute:
         self.cpu_secs = 0.0
         self.dc_min = None
         self.dc_max = None
+        self.thermal_secs = 0.0
+        self.power_limit_secs = 0.0
 
-    def add(self, dc, cpu, dt):
+    def add(self, dc, cpu, dt, thr=None):
         self.secs += dt
+        if thr:
+            self.thermal_secs += dt if thr["thermal"] else 0
+            self.power_limit_secs += dt if thr["power_limit"] else 0
         if dc is not None:
             self.dc_ws += dc * dt
             self.dc_secs += dt
@@ -147,6 +198,10 @@ class Minute:
                      dc_max=self.dc_max, wh=round(self.dc_ws / 3600, 4))
         if self.cpu_secs:
             r["cpu_avg"] = round(self.cpu_ws / self.cpu_secs, 2)
+        if self.thermal_secs:
+            r["throttle_s"] = round(self.thermal_secs, 1)
+        if self.power_limit_secs:
+            r["power_limit_s"] = round(self.power_limit_secs, 1)
         return r
 
 
@@ -155,9 +210,10 @@ def main():
     os.makedirs(STATE_DIR, exist_ok=True)
     minutes = os.path.join(STATE_DIR, "minutes.jsonl")
     now_path = os.path.join(RUN_DIR, "now.json")
-    smc, rapl = Smc(), Rapl()
+    smc, rapl, msr = Smc(), Rapl(), Msr()
     source = "smc:PD0R" if "PD0R" in smc.idx else ("smc:ID0R*VD0R" if smc.idx else None)
-    print(f"power-sampler: dc source={source} rapl={'yes' if rapl.ok else 'no'}", flush=True)
+    print(f"power-sampler: dc source={source} rapl={'yes' if rapl.ok else 'no'} "
+          f"msr={'tjmax %s offset %s' % (msr.tjmax, msr.offset) if msr.fds else 'no'}", flush=True)
     if source is None and not rapl.ok:
         write_atomic(now_path, json.dumps({"ts": int(time.time()), "available": False}))
         print("power-sampler: no power sensor on this machine; exiting", flush=True)
@@ -177,9 +233,10 @@ def main():
         except OSError:
             dc = None
         cpu = rapl.watts(now)
+        thr = msr.status()
         write_atomic(now_path, json.dumps({
             "ts": round(now, 1), "available": True, "dc_w": dc, "cpu_w": cpu,
-            "source": source, "interval_s": INTERVAL_S,
+            "source": source, "interval_s": INTERVAL_S, "throttle": thr,
         }))
         start = int(now // 60) * 60
         if start != cur.start:
@@ -192,7 +249,7 @@ def main():
             if day != last_prune_day:
                 prune(minutes, KEEP_DAYS)
                 last_prune_day = day
-        cur.add(dc, cpu, dt)
+        cur.add(dc, cpu, dt, thr)
 
 
 if __name__ == "__main__":

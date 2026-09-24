@@ -77,11 +77,30 @@ export interface TemperatureInfo {
   cpu: number | null;
   label: string;
   cores: CoreTemp[];
+  /** Where the CPU's own hardware throttling starts (TjMax minus the TCC
+   *  offset; 100 °C on the i7-2635QM). */
   throttleAt: number | null;
+  /** The chip's "high" warning line (coretemp temp_max; 86 °C here). Being
+   *  above it is hot, not throttling. */
+  warnAt: number | null;
+  throttling: ThrottleState;
   fanRpm: number | null;
   fanMin: number | null;
   fanMax: number | null;
   cpuPowerW: number | null;
+}
+
+export interface ThrottleState {
+  /** Thermal throttling right now. null = could not tell. */
+  active: boolean | null;
+  /** Clocked down by a power limit right now (not heat). */
+  powerLimit: boolean | null;
+  /** "msr" = the CPU's live status bits (via the power sampler);
+   *  "counters" = the kernel's event counter moved in the last poll. */
+  source: "msr" | "counters" | "none";
+  /** Package throttle events and total throttled time since boot. */
+  events: number | null;
+  totalMs: number | null;
 }
 
 export interface CoreTemp {

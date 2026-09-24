@@ -312,13 +312,49 @@ async function getCpuPowerW(): Promise<number | null> {
   return watts;
 }
 
+/* ------ Thermal throttling ------
+ * Preferred: the power sampler's copy of the CPU's live status bits
+ * (IA32_THERM_STATUS / PACKAGE_THERM_STATUS bit 0 = throttling now, bit 10 =
+ * power-limited now), which need root. Fallback: the kernel's world-readable
+ * throttle event counter, read as "throttling" if it moved since the last
+ * poll. Either way the since-boot counters ride along for context. */
+let prevThrottleCount: number | null = null;
+let lastThrottleMoveAt = 0;
+
+async function getThrottling(): Promise<{ state: TemperatureInfo["throttling"]; throttleAt: number | null }> {
+  const dir = "/sys/devices/system/cpu/cpu0/thermal_throttle";
+  const num = (f: string) => { try { return parseInt(fs.readFileSync(`${dir}/${f}`, "utf8")); } catch { return null; } };
+  const events = num("package_throttle_count");
+  const totalMs = num("package_throttle_total_time_ms");
+  if (events != null) {
+    if (prevThrottleCount != null && events > prevThrottleCount) lastThrottleMoveAt = Date.now();
+    prevThrottleCount = events;
+  }
+  try {
+    const n = JSON.parse(fs.readFileSync("/run/node-power/now.json", "utf8"));
+    const t = n.throttle;
+    if (t && Date.now() / 1000 - n.ts < 15) {
+      return {
+        state: { active: !!t.thermal, powerLimit: !!t.power_limit, source: "msr", events, totalMs },
+        throttleAt: t.tjmax != null ? t.tjmax - (t.tcc_offset ?? 0) : null,
+      };
+    }
+  } catch { /* no sampler: fall back to the counter */ }
+  if (events == null) return { state: { active: null, powerLimit: null, source: "none", events: null, totalMs: null }, throttleAt: null };
+  return {
+    state: { active: Date.now() - lastThrottleMoveAt < 20_000, powerLimit: null, source: "counters", events, totalMs },
+    throttleAt: null,
+  };
+}
+
 const tempLabelFor = (c: number) =>
   c < 50 ? "Cool" : c < 65 ? "Normal" : c < 80 ? "Warm" : c < 95 ? "Hot" : "Critical";
 
 async function getTemperature(): Promise<TemperatureInfo> {
   const base: TemperatureInfo = {
     cpu: null, label: "Unavailable", cores: [],
-    throttleAt: null, fanRpm: null, fanMin: null, fanMax: null, cpuPowerW: null,
+    throttleAt: null, warnAt: null, fanRpm: null, fanMin: null, fanMax: null, cpuPowerW: null,
+    throttling: { active: null, powerLimit: null, source: "none", events: null, totalMs: null },
   };
 
   if (PLATFORM === "darwin") {
@@ -349,7 +385,12 @@ async function getTemperature(): Promise<TemperatureInfo> {
           out.cpu = input;
           const crit = Object.entries(val).find(([k]) => /_crit$/.test(k))?.[1];
           const max = Object.entries(val).find(([k]) => /_max$/.test(k))?.[1];
-          out.throttleAt = max ?? crit ?? null;
+          // crit is TjMax, where the hardware actually throttles; max is a
+          // warning line 14 degrees below it. This used to report max as the
+          // throttle point, so a 90 degree CPU read "0 below limit" while the
+          // CPU's own status bits said it was not throttling at all.
+          out.warnAt = max ?? null;
+          out.throttleAt = crit ?? null;
         } else if (/^Core/i.test(key)) {
           out.cores.push({ name: key.trim(), temp: input });
         }
@@ -372,6 +413,9 @@ async function getTemperature(): Promise<TemperatureInfo> {
 
       if (out.cpu !== null) {
         out.label = tempLabelFor(out.cpu);
+        const t = await getThrottling();
+        out.throttling = t.state;
+        if (t.throttleAt != null) out.throttleAt = t.throttleAt;
         return out;
       }
     } catch { /* fall through to thermal_zone */ }

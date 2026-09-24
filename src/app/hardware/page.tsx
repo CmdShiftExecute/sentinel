@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { TaskManager } from "@/components/task-manager";
 import { PowerPanel } from "@/components/power-panel";
+import { ThrottleFlag } from "@/components/throttle-flag";
 import useSWR from "swr";
 import type { PowerResponse } from "@/lib/types";
 import { useSystemData } from "@/hooks/use-system-data";
@@ -96,6 +97,8 @@ function PowerCoolingSection({ data }: { data: ReturnType<typeof useSystemData>[
       ? Math.round(((t.fanRpm - t.fanMin) / (t.fanMax - t.fanMin)) * 100)
       : null;
   const headroom = t?.cpu != null && t?.throttleAt ? Math.max(0, Math.round(t.throttleAt - t.cpu)) : null;
+  // Signed distance from the warning line: positive = above it.
+  const overWarn = t?.cpu != null && t?.warnAt ? Math.round(t.cpu - t.warnAt) : null;
   const { data: power } = useSWR<PowerResponse>("/api/power", (u: string) => fetch(u).then((r) => r.json()), { refreshInterval: 5_000 });
 
   return (
@@ -157,22 +160,33 @@ function PowerCoolingSection({ data }: { data: ReturnType<typeof useSystemData>[
           )}
         </div>
 
-        {/* Thermal headroom */}
+        {/* Thermal headroom: distance from the 86 degree warning line (signed),
+            distance from the real hardware throttle point, and the CPU's own
+            live answer to "is it throttling". */}
         <div className="card px-4 py-3.5">
           <div className="text-[10px] text-txt-muted mb-2">Thermal Headroom</div>
-          <div className="flex items-baseline gap-1.5 mb-1.5">
+          <div className="flex items-baseline gap-1.5 mb-1">
             <span
               className="data-value text-2xl font-bold"
-              style={{ color: headroom !== null && headroom < 20 ? "var(--warning)" : "var(--success)" }}
+              style={{ color: overWarn == null ? undefined : overWarn > 0 ? "var(--danger)" : overWarn > -10 ? "var(--warning)" : "var(--success)" }}
             >
-              {headroom !== null ? `${headroom}°` : "—"}
+              {overWarn !== null ? `${Math.abs(overWarn)}°` : headroom !== null ? `${headroom}°` : "—"}
             </span>
-            {headroom !== null && <span className="text-[11px] text-txt-muted">below limit</span>}
+            <span className="text-[11px] text-txt-muted">
+              {overWarn !== null
+                ? `${overWarn > 0 ? "above" : "below"} the ${t?.warnAt}°C warning limit`
+                : headroom !== null ? "below limit" : ""}
+            </span>
           </div>
           <div className="text-[11px] text-txt-muted">
-            {t?.throttleAt ? `CPU throttles at ${t.throttleAt}°C` : "Throttle limit unavailable"}
+            {t?.throttleAt
+              ? headroom !== null && headroom > 0
+                ? `${headroom}° below hardware throttling at ${t.throttleAt}°C`
+                : `At the ${t.throttleAt}°C hardware throttle point`
+              : "Throttle limit unavailable"}
           </div>
-          <div className="mt-2">
+          <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+            <ThrottleFlag t={t?.throttling} size="lg" />
             <StatusBadge
               variant={
                 !t || t.label === "Unavailable" ? "neutral"
@@ -182,6 +196,11 @@ function PowerCoolingSection({ data }: { data: ReturnType<typeof useSystemData>[
               label={t?.label || "N/A"}
             />
           </div>
+          {t?.throttling?.events != null && (
+            <div className="mt-1.5 text-[10px] text-txt-muted">
+              {t.throttling.events} brief throttle event{t.throttling.events === 1 ? "" : "s"} since boot · {((t.throttling.totalMs ?? 0) / 1000).toFixed(2)} s in total
+            </div>
+          )}
         </div>
       </div>
       <div id="energy" className="scroll-mt-16 md:scroll-mt-4">
