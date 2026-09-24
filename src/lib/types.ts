@@ -93,6 +93,9 @@ export interface TemperatureInfo {
 export interface ThrottleState {
   /** Thermal throttling right now. null = could not tell. */
   active: boolean | null;
+  /** Which signal: the CPU's own heat limit, the board (Mac SMC) forcing a
+   *  slow-down via PROCHOT#, or both. null when not throttling. */
+  cause?: "heat" | "board" | "both" | null;
   /** Clocked down by a power limit right now (not heat). */
   powerLimit: boolean | null;
   /** "msr" = the CPU's live status bits (via the power sampler);

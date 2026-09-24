@@ -335,7 +335,12 @@ async function getThrottling(): Promise<{ state: TemperatureInfo["throttling"]; 
     const t = n.throttle;
     if (t && Date.now() / 1000 - n.ts < 15) {
       return {
-        state: { active: !!t.thermal, powerLimit: !!t.power_limit, source: "msr", events, totalMs },
+        state: {
+          // either the CPU's own heat limit or the board forcing a slow-down
+          active: !!t.thermal || !!t.board,
+          cause: t.thermal && t.board ? "both" : t.thermal ? "heat" : t.board ? "board" : null,
+          powerLimit: !!t.power_limit, source: "msr", events, totalMs,
+        },
         throttleAt: t.tjmax != null ? t.tjmax - (t.tcc_offset ?? 0) : null,
       };
     }

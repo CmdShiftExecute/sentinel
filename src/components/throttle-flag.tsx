@@ -14,10 +14,13 @@ export function ThrottleFlag({ t, size = "sm" }: { t?: ThrottleState; size?: "sm
     return <span className={clsx("text-txt-muted", big ? "text-xs" : "text-[10px]")} title={title}>Throttle state unknown</span>;
   }
   if (t.active) {
+    const why = t.cause === "board"
+      ? " · the Mac's board (SMC) is forcing the CPU to slow down, below the 100°C limit"
+      : t.cause === "heat" ? " · the CPU has reached its own heat limit" : "";
     return (
-      <span title={title} className={clsx("inline-flex items-center gap-1.5 font-extrabold uppercase tracking-wider text-danger", big ? "text-sm" : "text-[11px]")}>
+      <span title={`${title}${why}`} className={clsx("inline-flex items-center gap-1.5 font-extrabold uppercase tracking-wider text-danger", big ? "text-sm" : "text-[11px]")}>
         <span className="status-dot status-dot-offline status-dot-pulse" style={{ background: "var(--danger)" }} />
-        Throttling
+        Throttling{t.cause === "board" ? " (board)" : t.cause === "both" ? " (heat + board)" : ""}
       </span>
     );
   }

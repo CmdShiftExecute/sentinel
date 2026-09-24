@@ -18,7 +18,11 @@ both sensors it reads are root-only:
     flags, and IA32_TEMPERATURE_TARGET (0x1A2) gives TjMax and the TCC
     offset, i.e. the temperature where hardware throttling really starts.
     This is the CPU's own answer to "is it throttling", not an inference
-    from temperature.
+    from temperature. Bit 2 / bit 3 of 0x19C are PROCHOT# now / PROCHOT#
+    seen: the BOARD (on a Mac, the SMC) forcing the CPU to slow down, which
+    can happen at any temperature. Bit 3 is sticky, so it is read and then
+    cleared each interval (log bits are write-0-to-clear; the status bits
+    ignore writes) to count bursts shorter than the 2 s sampling gap.
 
 It writes two files and nothing else. Readers (the Sentinel dashboard, the
 metrics sampler) read these files and never touch the sensors:
@@ -116,9 +120,12 @@ class Msr:
         for d in sorted(os.listdir("/dev/cpu")) if os.path.isdir("/dev/cpu") else []:
             if d.isdigit():
                 try:
-                    self.fds[int(d)] = os.open(f"/dev/cpu/{d}/msr", os.O_RDONLY)
+                    self.fds[int(d)] = os.open(f"/dev/cpu/{d}/msr", os.O_RDWR)
                 except OSError:
-                    pass
+                    try:
+                        self.fds[int(d)] = os.open(f"/dev/cpu/{d}/msr", os.O_RDONLY)
+                    except OSError:
+                        pass
         self.tjmax = self.offset = None
         if 0 in self.fds:
             try:
@@ -130,6 +137,12 @@ class Msr:
     def _rd(self, cpu, reg):
         return struct.unpack("<Q", os.pread(self.fds[cpu], 8, reg))[0]
 
+    # the write-0-to-clear log bits of IA32_THERM_STATUS except PROCHOT log
+    # (bit 3): writing 1 leaves a log bit untouched, 0 clears it. Only bits
+    # 1, 5, 7, 9, 11 exist on Sandy Bridge: setting 13/15 (later chips'
+    # current/cross-domain logs) makes the write fault with EIO (measured).
+    _KEEP_OTHER_LOGS = (1 << 1) | (1 << 5) | (1 << 7) | (1 << 9) | (1 << 11)
+
     def status(self):
         if not self.fds:
             return None
@@ -138,8 +151,19 @@ class Msr:
             cores = [self._rd(c, 0x19C) for c in self.fds]
         except OSError:
             return None
+        board_now = any(c & (1 << 2) for c in cores)
+        board_seen = any(c & (1 << 3) for c in cores)
+        if board_seen:
+            for c in self.fds:
+                try:
+                    os.pwrite(self.fds[c], struct.pack("<Q", self._KEEP_OTHER_LOGS), 0x19C)
+                except OSError:
+                    pass
         return {
             "thermal": bool(pkg & 1) or any(c & 1 for c in cores),
+            # the Mac's board (SMC) forcing a slow-down via PROCHOT#, now or
+            # at any point since the previous 2 s read
+            "board": board_now or board_seen,
             "power_limit": bool(pkg & (1 << 10)) or any(c & (1 << 10) for c in cores),
             "tjmax": self.tjmax,
             "tcc_offset": self.offset,
@@ -175,12 +199,14 @@ class Minute:
         self.dc_min = None
         self.dc_max = None
         self.thermal_secs = 0.0
+        self.board_secs = 0.0
         self.power_limit_secs = 0.0
 
     def add(self, dc, cpu, dt, thr=None):
         self.secs += dt
         if thr:
             self.thermal_secs += dt if thr["thermal"] else 0
+            self.board_secs += dt if thr.get("board") else 0
             self.power_limit_secs += dt if thr["power_limit"] else 0
         if dc is not None:
             self.dc_ws += dc * dt
@@ -200,6 +226,8 @@ class Minute:
             r["cpu_avg"] = round(self.cpu_ws / self.cpu_secs, 2)
         if self.thermal_secs:
             r["throttle_s"] = round(self.thermal_secs, 1)
+        if self.board_secs:
+            r["board_throttle_s"] = round(self.board_secs, 1)
         if self.power_limit_secs:
             r["power_limit_s"] = round(self.power_limit_secs, 1)
         return r
