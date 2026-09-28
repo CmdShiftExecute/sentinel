@@ -67,5 +67,17 @@
       "householdMonthlyKwh": 0,
       "source": "DEWA residential slab tariff + electricity fuel surcharge (September 2026), 5% VAT \u2014 dewa.gov.ae/en/consumer/billing/slab-tariff"
     }
+  },
+  "processes": {
+    "labels": [
+      {
+        "match": "claude(\\.exe)? --print",
+        "label": "Claude background call"
+      },
+      {
+        "match": "/hooks/([A-Za-z]+)\\.hook\\.ts",
+        "label": "Hook: $1"
+      }
+    ]
   }
 }

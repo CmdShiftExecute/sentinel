@@ -30,7 +30,7 @@ It's a Next.js app that runs directly on the machine you want to monitor. It rea
 
 ### System Vitals
 
-CPU usage (delta-based, not a snapshot) with per-thread meters, load average (1/5/15 min), memory with accurate active+wired reporting, swap usage, disk utilization across all mount points with live read/write I/O rates and S.M.A.R.T. health, temperature readings with per-core detail, and top processes ranked by CPU.
+CPU usage (delta-based, not a snapshot) with per-thread meters, load average (1/5/15 min), memory with accurate active+wired reporting, swap usage, disk utilization across all mount points with live read/write I/O rates and S.M.A.R.T. health, temperature readings with per-core detail, and a live task manager. Each process is named by what it is for (its systemd unit's description, Docker container or PM2 app) rather than its binary, so a `node` build reads as the job that launched it; `processes.labels` in `sentinel.config.json` adds your own regex → label rules, with `$1` for a capture group.
 
 **Adaptive power view:** Sentinel detects whether the machine has a battery. Laptops and portable servers get the battery gauge, charge details, health, and cycle count; desktop hardware (Mac mini, NUC, rack box) automatically swaps in an AC-focused view instead: power source, CPU package draw via Intel RAPL, exhaust-fan RPM against its range, and thermal headroom to the throttle limit. No configuration needed.
 

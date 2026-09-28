@@ -4,6 +4,7 @@ import os from "os";
 import { exec as execCb } from "child_process";
 import { promisify } from "util";
 import type { ProcessRow, ProcessesResponse } from "@/lib/types";
+import { labelFor, taskLookups } from "@/lib/task-label";
 
 /* Task manager — every process on the box, measured NOW.
  *
@@ -32,6 +33,7 @@ const PAGE = 4096;
 
 type Snap = {
   pid: number;
+  ppid: number;
   name: string;
   state: string;
   ticks: number;
@@ -77,7 +79,7 @@ function snapshot(): Map<number, Snap> {
     const close = stat.lastIndexOf(")");
     const name = stat.slice(stat.indexOf("(") + 1, close);
     const f = stat.slice(close + 2).split(" ");
-    // f[0]=state, f[11]=utime, f[12]=stime, f[17]=num_threads, f[21]=rss pages
+    // f[0]=state, f[1]=ppid, f[11]=utime, f[12]=stime, f[17]=num_threads, f[21]=rss pages
     const status = readSafe(`/proc/${d}/status`) ?? "";
     const uidM = status.match(/^Uid:\s+(\d+)/m);
     const ioRaw = readSafe(`/proc/${d}/io`);
@@ -90,6 +92,7 @@ function snapshot(): Map<number, Snap> {
     const cmd = (readSafe(`/proc/${d}/cmdline`) ?? "").replace(/\0/g, " ").trim();
     out.set(Number(d), {
       pid: Number(d),
+      ppid: Number(f[1]) || 0,
       name,
       state: f[0],
       ticks: Number(f[11]) + Number(f[12]),
@@ -105,6 +108,7 @@ function snapshot(): Map<number, Snap> {
 }
 
 async function linux(): Promise<ProcessesResponse> {
+  const lookups = taskLookups();
   const a = snapshot();
   const t0 = Date.now();
   await new Promise((r) => setTimeout(r, SAMPLE_MS));
@@ -112,6 +116,8 @@ async function linux(): Promise<ProcessesResponse> {
   const secs = (Date.now() - t0) / 1000;
   const memTotal = os.totalmem();
   const names = users();
+  const lk = await lookups;
+  const parentOf = (pid: number) => b.get(pid)?.ppid;
   const rows: ProcessRow[] = [];
   for (const s of Array.from(b.values())) {
     // Kernel threads have no command line and no resident memory: they are
@@ -120,6 +126,8 @@ async function linux(): Promise<ProcessesResponse> {
     const prev = a.get(s.pid);
     const dTicks = prev ? Math.max(0, s.ticks - prev.ticks) : 0;
     const ioRate = s.io != null && prev?.io != null ? Math.max(0, s.io - prev.io) / secs : null;
+    const command = s.cmd || `[${s.name}]`;
+    const tl = labelFor({ pid: s.pid, name: s.name, command }, lk, parentOf);
     rows.push({
       pid: s.pid,
       name: s.name,
@@ -133,7 +141,10 @@ async function linux(): Promise<ProcessesResponse> {
       swap: s.swap,
       threads: s.threads,
       ioRate: ioRate == null ? null : Math.round(ioRate),
-      command: s.cmd || `[${s.name}]`,
+      command,
+      label: tl.label,
+      labelSource: tl.source,
+      unit: tl.unit,
     });
   }
   return { ok: true, source: "proc", sampledMs: Math.round(secs * 1000), cores: os.cpus().length, memTotal, rows };
@@ -150,6 +161,7 @@ async function darwin(): Promise<ProcessesResponse> {
       pid: Number(p[0]), user: p[1], state: "", cpu: Number(p[2]) || 0, memPct: Number(p[3]) || 0,
       rss: (Number(p[4]) || 0) * 1024, swap: null, threads: null, ioRate: null,
       name: cmd.split("/").pop() || cmd, command: cmd,
+      label: cmd.split("/").pop() || cmd, labelSource: "process" as const, unit: null,
     };
   });
   return { ok: true, source: "ps", sampledMs: 0, cores: os.cpus().length, memTotal, rows };

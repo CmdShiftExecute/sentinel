@@ -14,11 +14,11 @@ import type { ProcessRow, ProcessesResponse } from "@/lib/types";
  * is sorted, so a column of dashes never pushes real numbers off the top.
  */
 
-type Key = "name" | "pid" | "user" | "cpu" | "rss" | "swap" | "threads" | "ioRate";
+type Key = "label" | "pid" | "user" | "cpu" | "rss" | "swap" | "threads" | "ioRate";
 type Dir = "asc" | "desc";
 
 const COLS: { key: Key; label: string; title: string; numeric: boolean; hideMobile?: boolean }[] = [
-  { key: "name", label: "Process", title: "Process name", numeric: false },
+  { key: "label", label: "Task", title: "What the process is for; the binary name is shown underneath", numeric: false },
   { key: "cpu", label: "CPU", title: "Live CPU over the last half second, percent of one core (200% = two full cores)", numeric: true },
   { key: "rss", label: "Memory", title: "Resident memory (RAM actually held), with share of total RAM", numeric: true },
   { key: "swap", label: "Swap", title: "Memory of this process pushed out to swap", numeric: true },
@@ -44,7 +44,7 @@ export function TaskManager({ id }: { id?: string }) {
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
     const list = (data?.rows ?? []).filter(
-      (r) => !q || r.name.toLowerCase().includes(q) || r.command.toLowerCase().includes(q) || r.user.toLowerCase().includes(q) || String(r.pid) === q,
+      (r) => !q || r.name.toLowerCase().includes(q) || r.label.toLowerCase().includes(q) || r.command.toLowerCase().includes(q) || r.user.toLowerCase().includes(q) || String(r.pid) === q,
     );
     const sign = sort.dir === "asc" ? 1 : -1;
     return list.sort((a, b) => {
@@ -135,7 +135,10 @@ export function TaskManager({ id }: { id?: string }) {
               shown.map((p) => (
                 <tr key={p.pid} className="border-b border-line-dim last:border-0 hover:bg-surface-hover transition-colors">
                   <td className="px-3 py-1.5 max-w-[220px]">
-                    <div className="text-xs font-semibold text-txt-primary truncate" title={p.command}>{p.name}</div>
+                    <div className="text-xs font-semibold text-txt-primary truncate" title={p.command}>{p.label}</div>
+                    {p.label !== p.name && (
+                      <div className="text-[10px] text-txt-muted truncate" title={p.unit ?? undefined}>{p.name}</div>
+                    )}
                   </td>
                   <td className="px-3 py-1.5 text-right">
                     <span className={clsx("data-value text-xs font-semibold", heat(p.cpu, 50, 20))}>{p.cpu.toFixed(1)}%</span>

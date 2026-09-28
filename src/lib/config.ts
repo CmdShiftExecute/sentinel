@@ -24,6 +24,9 @@ export interface SentinelConfig {
   network: { knownDevices: KnownDevices };
   browserAgent: { vncUrl: string; agentScript: string };
   power: PowerConfig;
+  /** Task-manager names: regex on the command line → label, first match wins.
+   *  Unmatched processes are named from their PM2 app, container or systemd unit. */
+  processes: { labels: { match: string; label: string }[] };
 }
 
 /** One electricity price band: kWh up to `upTo` per month (null = no ceiling). */
@@ -61,6 +64,7 @@ const DEFAULTS: SentinelConfig = {
     psuEfficiency: 0.85,
     tariff: { currency: "", slabs: [], surcharge: 0, vatPct: 0, householdMonthlyKwh: 0, source: "" },
   },
+  processes: { labels: [] },
 };
 
 const CONFIG_PATH = path.join(process.cwd(), "sentinel.config.json");

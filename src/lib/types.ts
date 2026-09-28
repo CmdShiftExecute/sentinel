@@ -347,6 +347,12 @@ export interface ProcessRow {
   /** Disk read+write, bytes per second. */
   ioRate: number | null;
   command: string;
+  /** What the process is for ("Rebuild Quartz vault site"), not its binary ("node"). */
+  label: string;
+  /** Where the label came from: config rule, PM2 app, container, systemd unit, or the kernel name. */
+  labelSource: "rule" | "pm2" | "container" | "unit" | "process";
+  /** The systemd unit or scope the process runs in, when known. */
+  unit: string | null;
 }
 
 export interface ProcessesResponse {
