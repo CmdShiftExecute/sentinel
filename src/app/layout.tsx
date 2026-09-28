@@ -1,21 +1,23 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Figtree } from "next/font/google";
+import localFont from "next/font/local";
 import { Sidebar } from "@/components/sidebar";
 import { PointerGlow, BootSweep } from "@/components/effects";
 import { PageWrapper } from "@/components/page-wrapper";
 import "./globals.css";
 
-const bricolage = Bricolage_Grotesque({
-  subsets: ["latin"],
+// Fonts ship with the repo (SIL OFL 1.1, licences beside them) so a build never
+// needs Google Fonts: a network blip there used to fail the whole build.
+const bricolage = localFont({
+  src: "./fonts/bricolage-grotesque-latin-var.woff2",
   variable: "--font-display",
-  weight: ["400", "600", "700", "800"],
+  weight: "400 800",
   display: "swap",
 });
 
-const figtree = Figtree({
-  subsets: ["latin"],
+const figtree = localFont({
+  src: "./fonts/figtree-latin-var.woff2",
   variable: "--font-body",
-  weight: ["400", "500", "600", "700"],
+  weight: "400 700",
   display: "swap",
 });
 
