@@ -2,7 +2,7 @@ import fs from "fs";
 import path from "path";
 import { loadConfig } from "./config";
 import {
-  countBySeverity, parseFeed, worstSeverity,
+  countBySeverity, groupByDay, parseFeed, worstSeverity,
   type NotificationItem, type Severity,
 } from "./notifications";
 
@@ -14,6 +14,9 @@ export interface NotificationsPayload {
   /** The feed file exists and was read. */
   available: boolean;
   items: NotificationItem[];
+  /** The same days and order the page shows, as ids into `items`, so another front end
+   *  (a second dashboard) renders the labels without re-implementing the date rules. */
+  groups: { key: string; label: string; ids: string[] }[];
   unread: number;
   unreadWorst: Severity | null;
   counts: Record<Severity, number>;
@@ -69,7 +72,7 @@ export function loadNotifications(nowMs = Date.now()): NotificationsPayload {
   const file = feedPath();
   const lastSeen = readLastSeen();
   const empty: NotificationsPayload = {
-    configured: !!file, available: false, items: [], unread: 0, unreadWorst: null,
+    configured: !!file, available: false, items: [], groups: [], unread: 0, unreadWorst: null,
     counts: countBySeverity([]), lastSeen, now: nowMs, retentionDays: cfg.retentionDays, skipped: 0,
   };
   if (!file || !fs.existsSync(file)) return empty;
@@ -86,8 +89,10 @@ export function loadNotifications(nowMs = Date.now()): NotificationsPayload {
     .sort((a, b) => b.atMs - a.atMs)
     .slice(0, cfg.maxItems);
   const unreadItems = items.filter((i) => i.atMs > lastSeen);
+  const tz = process.env.NEXT_PUBLIC_SENTINEL_TZ || undefined;
   return {
     configured: true, available: true, items,
+    groups: groupByDay(items, nowMs, tz).map((g) => ({ key: g.key, label: g.label, ids: g.items.map((i) => i.id) })),
     unread: unreadItems.length, unreadWorst: worstSeverity(unreadItems),
     counts: countBySeverity(items), lastSeen, now: nowMs, retentionDays: cfg.retentionDays, skipped,
   };
