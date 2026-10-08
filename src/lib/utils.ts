@@ -84,7 +84,7 @@ export function cronToHuman(schedule: string): string {
  * from another country and want a single consistent clock. Passing undefined
  * to toLocaleString means exactly "use local", so the default costs nothing.
  */
-const TZ: string | undefined = process.env.NEXT_PUBLIC_SENTINEL_TZ || undefined;
+export const TZ: string | undefined = process.env.NEXT_PUBLIC_SENTINEL_TZ || undefined;
 
 /** Optional short suffix printed after a time, e.g. "CET". Empty by default,
  *  because an unexplained abbreviation is worse than no abbreviation. */

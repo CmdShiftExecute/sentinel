@@ -79,5 +79,11 @@
         "label": "Hook: $1"
       }
     ]
+  },
+  "notifications": {
+    "feedPath": "",
+    "channels": ["notifications"],
+    "retentionDays": 30,
+    "maxItems": 300
   }
 }

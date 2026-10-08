@@ -226,6 +226,37 @@ Or expose it on your local network and access via the server's LAN IP.
 
 ---
 
+## Notification Feed (optional)
+
+A bell in the sidebar (and the mobile header) opens a tray of your latest alerts. "Open notification center" leads to `/notifications`: every alert grouped by day (Today, 1d ago, 2d ago, 3d ago, then `Sun, 04-Oct-2026`), worst severity first inside each day, each row expandable to its full text.
+
+Sentinel only reads a file. Whatever sends your alerts (Telegram, email, a webhook) appends one JSON object per line right after each send:
+
+```json
+{"id":"20261008T165701-1a2b3c4d","at":"2026-10-08T16:57:01+04:00","channel":"alerts","source":"freeze-warning","severity":"critical","title":"Your server is about to freeze","text":"full message as sent","delivered":true,"test":false}
+```
+
+| Field | Meaning |
+|---|---|
+| `at` | ISO 8601 time with offset. Required. Lines without a valid `at` are skipped. |
+| `channel` | Which sender or bot. Only channels listed in `notifications.channels` are shown. |
+| `severity` | `critical`, `warning`, `notice`, `info` or `ok` (resolved). Unknown values show as `info`. |
+| `title`, `text`, `source` | Headline, full body, and the script that sent it. |
+| `delivered` | `false` when the send failed. The row is marked "not delivered". |
+| `test` | `true` for self-tests and "Test" messages; shown dimmed. |
+
+Set it up in `sentinel.config.json` (see `sentinel.config.example.json`):
+
+```json
+"notifications": { "feedPath": "/path/to/notifications.jsonl", "channels": ["alerts"], "retentionDays": 30, "maxItems": 300 }
+```
+
+- Empty `feedPath` means the bell says no feed is set up.
+- "Mark all read" is stored in `.sentinel-notifications-state.json` next to the app (gitignored), so it follows you across devices.
+- Day labels use `NEXT_PUBLIC_SENTINEL_TZ` when set, otherwise the browser's zone.
+- For tests or a demo, `SENTINEL_NOTIFICATIONS_FEED` and `SENTINEL_NOTIFICATIONS_STATE` override the two paths.
+- Keep the file small: have the writer rotate it (Sentinel reads the last 4 MB plus a `.1` sibling if present).
+
 ## Power Actions Setup
 
 The reboot and shutdown buttons need passwordless sudo for shutdown commands. On your server:
@@ -416,6 +447,10 @@ Sentinel follows [semantic versioning](https://semver.org) at `MAJOR.MINOR.PATCH
 The version in `package.json` is the source of truth; the badge at the top of this file and the table below track it.
 
 ## Changelog
+
+### Unreleased
+
+- Notification center: bell, tray and `/notifications` page fed by a JSONL file (see Notification Feed).
 
 ### 0.4.0 — 21 Aug 2026
 

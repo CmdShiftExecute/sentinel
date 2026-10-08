@@ -7,6 +7,7 @@ import clsx from "clsx";
 import { ThemeToggle } from "./theme-toggle";
 import { PalettePicker } from "./palette-picker";
 import { HelpOverlay } from "./help-overlay";
+import { NotificationBell } from "./notification-bell";
 import { useSystemData } from "@/hooks/use-system-data";
 
 const NAV_ITEMS = [
@@ -54,9 +55,10 @@ export function Sidebar() {
           <div className="flex items-center gap-2.5 mb-1">
             <div className="w-2 h-2 rounded-full bg-accent flex-shrink-0"
               style={{ boxShadow: "0 0 8px var(--accent)" }} />
-            <span className="font-display font-bold text-sm tracking-tight text-txt-primary truncate">
+            <span className="font-display font-bold text-sm tracking-tight text-txt-primary truncate flex-1">
               {data?.hostname || "sentinel"}
             </span>
+            <NotificationBell placement="sidebar" />
           </div>
           <p className="text-[11px] text-txt-muted pl-[18px] truncate">
             {data?.os?.name || "Server"} {data?.os?.version ? `${data.os.version}` : ""}
@@ -153,7 +155,10 @@ export function Sidebar() {
             {data?.hostname || "sentinel"}
           </span>
         </div>
-        <ThemeToggle />
+        <div className="flex items-center gap-1">
+          <NotificationBell placement="header" />
+          <ThemeToggle />
+        </div>
       </header>
 
       {/* ===== Mobile Bottom Tab Bar ===== */}

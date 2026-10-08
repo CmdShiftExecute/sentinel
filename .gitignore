@@ -48,6 +48,8 @@ activity.jsonl
 activity-state.json
 activity-collector.log
 warm-standby-status.json
+.sentinel-notifications-state.json
+notifications.jsonl*
 
 # User-specific config (personal paths / service names — never commit)
 sentinel.config.json

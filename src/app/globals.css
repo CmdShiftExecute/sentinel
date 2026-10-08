@@ -887,3 +887,18 @@ button:active {
 @media (prefers-reduced-motion: reduce) {
   .anchor-flash { animation: none; outline-color: color-mix(in oklab, var(--accent) 50%, transparent); }
 }
+
+/* Notification center: row text expands with a grid-rows transition (no height animation). */
+.notif-expand {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 220ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.notif-expand[data-open="true"] { grid-template-rows: 1fr; }
+.notif-expand[data-open="false"] > div {
+  visibility: hidden;
+  transition: visibility 0s linear 220ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  .notif-expand, .notif-expand[data-open="false"] > div { transition: none; }
+}

@@ -27,6 +27,18 @@ export interface SentinelConfig {
   /** Task-manager names: regex on the command line → label, first match wins.
    *  Unmatched processes are named from their PM2 app, container or systemd unit. */
   processes: { labels: { match: string; label: string }[] };
+  /** Notification center. `feedPath` is a JSONL file your alert senders append to
+   *  (schema in the README). Empty = the bell shows "not set up". Keep the real
+   *  path in the gitignored local config. */
+  notifications: NotificationsConfig;
+}
+
+export interface NotificationsConfig {
+  feedPath: string;
+  /** Only entries whose `channel` is listed are shown. */
+  channels: string[];
+  retentionDays: number;
+  maxItems: number;
 }
 
 /** One electricity price band: kWh up to `upTo` per month (null = no ceiling). */
@@ -65,6 +77,7 @@ const DEFAULTS: SentinelConfig = {
     tariff: { currency: "", slabs: [], surcharge: 0, vatPct: 0, householdMonthlyKwh: 0, source: "" },
   },
   processes: { labels: [] },
+  notifications: { feedPath: "", channels: ["notifications"], retentionDays: 30, maxItems: 300 },
 };
 
 const CONFIG_PATH = path.join(process.cwd(), "sentinel.config.json");
