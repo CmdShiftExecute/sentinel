@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
-import { loadNotifications, markAllRead } from "@/lib/notifications.server";
+import { allowedChannels, loadNotifications, markAllRead } from "@/lib/notifications.server";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const channel = new URL(req.url).searchParams.get("channel") || undefined;
+  if (channel && !allowedChannels().includes(channel)) {
+    return NextResponse.json({ error: "unknown channel" }, { status: 400 });
+  }
   try {
-    return NextResponse.json(loadNotifications());
+    return NextResponse.json(loadNotifications(Date.now(), channel));
   } catch (err) {
     console.error(`[notifications] could not read the feed: ${err}`);
     return NextResponse.json({ error: "unreadable" }, { status: 503 });

@@ -83,6 +83,7 @@
   "notifications": {
     "feedPath": "",
     "channels": ["notifications"],
+    "extraChannels": [],
     "retentionDays": 30,
     "maxItems": 300
   }

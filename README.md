@@ -248,10 +248,11 @@ Sentinel only reads a file. Whatever sends your alerts (Telegram, email, a webho
 Set it up in `sentinel.config.json` (see `sentinel.config.example.json`):
 
 ```json
-"notifications": { "feedPath": "/path/to/notifications.jsonl", "channels": ["alerts"], "retentionDays": 30, "maxItems": 300 }
+"notifications": { "feedPath": "/path/to/notifications.jsonl", "channels": ["alerts"], "extraChannels": ["reports"], "retentionDays": 30, "maxItems": 300 }
 ```
 
 - Empty `feedPath` means the bell says no feed is set up.
+- `extraChannels` are never shown by Sentinel itself. Another front end can read one with `GET /api/notifications?channel=<name>`; any name not in `channels` or `extraChannels` gets a 400.
 - "Mark all read" is stored in `.sentinel-notifications-state.json` next to the app (gitignored), so it follows you across devices.
 - Day labels use `NEXT_PUBLIC_SENTINEL_TZ` when set, otherwise the browser's zone.
 - For tests or a demo, `SENTINEL_NOTIFICATIONS_FEED` and `SENTINEL_NOTIFICATIONS_STATE` override the two paths.

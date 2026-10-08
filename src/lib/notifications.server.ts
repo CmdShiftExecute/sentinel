@@ -66,8 +66,15 @@ export function markAllRead(nowMs = Date.now()): number {
   return nowMs;
 }
 
-/** Throws only when the feed exists but cannot be read; the route turns that into a 503. */
-export function loadNotifications(nowMs = Date.now()): NotificationsPayload {
+/** Channels a caller may name with `?channel=`: the shown ones plus the configured extras. */
+export function allowedChannels(): string[] {
+  const c = loadConfig().notifications;
+  return [...c.channels, ...c.extraChannels];
+}
+
+/** Throws only when the feed exists but cannot be read; the route turns that into a 503.
+ *  `channel` (already validated against allowedChannels) narrows the list to that one channel. */
+export function loadNotifications(nowMs = Date.now(), channel?: string): NotificationsPayload {
   const cfg = loadConfig().notifications;
   const file = feedPath();
   const lastSeen = readLastSeen();
@@ -85,7 +92,7 @@ export function loadNotifications(nowMs = Date.now()): NotificationsPayload {
   const { items: all, skipped } = parseFeed(raw);
   const cutoff = nowMs - cfg.retentionDays * 86_400_000;
   const items = all
-    .filter((i) => i.atMs >= cutoff && cfg.channels.includes(i.channel))
+    .filter((i) => i.atMs >= cutoff && (channel ? i.channel === channel : cfg.channels.includes(i.channel)))
     .sort((a, b) => b.atMs - a.atMs)
     .slice(0, cfg.maxItems);
   const unreadItems = items.filter((i) => i.atMs > lastSeen);

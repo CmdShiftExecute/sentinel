@@ -37,6 +37,8 @@ export interface NotificationsConfig {
   feedPath: string;
   /** Only entries whose `channel` is listed are shown. */
   channels: string[];
+  /** Further channels another front end may ask for with `?channel=`; never shown by default. */
+  extraChannels: string[];
   retentionDays: number;
   maxItems: number;
 }
@@ -77,7 +79,7 @@ const DEFAULTS: SentinelConfig = {
     tariff: { currency: "", slabs: [], surcharge: 0, vatPct: 0, householdMonthlyKwh: 0, source: "" },
   },
   processes: { labels: [] },
-  notifications: { feedPath: "", channels: ["notifications"], retentionDays: 30, maxItems: 300 },
+  notifications: { feedPath: "", channels: ["notifications"], extraChannels: [], retentionDays: 30, maxItems: 300 },
 };
 
 const CONFIG_PATH = path.join(process.cwd(), "sentinel.config.json");

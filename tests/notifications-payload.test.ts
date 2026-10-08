@@ -15,12 +15,16 @@ fs.writeFileSync(feed, [
   row("c", "2026-10-06T09:00:00+04:00", "ok"),
   row("d", "2026-10-02T09:00:00+04:00", "warning"),
   row("x", "2026-10-08T10:00:00+04:00", "critical", "other-bot"),
+  row("r", "2026-10-08T07:00:00+04:00", "ok", "reports"),
 ].join("\n"));
 process.env.SENTINEL_NOTIFICATIONS_FEED = feed;
 process.env.SENTINEL_NOTIFICATIONS_STATE = path.join(dir, "state.json");
 process.env.NEXT_PUBLIC_SENTINEL_TZ = "Asia/Dubai";
+// config comes from the working directory's sentinel.config.json; give the test its own
+fs.writeFileSync(path.join(dir, "sentinel.config.json"), JSON.stringify({ notifications: { feedPath: "", channels: ["notifications"], extraChannels: ["reports"] } }));
+process.chdir(dir);
 
-const { loadNotifications } = await import("../src/lib/notifications.server");
+const { loadNotifications, allowedChannels } = await import("../src/lib/notifications.server");
 
 describe("payload groups", () => {
   test("labels, order and ids come from the shared day logic; other channels are dropped", () => {
@@ -31,5 +35,13 @@ describe("payload groups", () => {
     expect(p.groups.flatMap((g) => g.ids).sort()).toEqual(["a", "b", "c", "d"]);
     expect(p.unread).toBe(4);
     expect(p.unreadWorst).toBe("critical");
+  });
+
+  test("an extra channel is served only when asked for, and is never in the default list", () => {
+    expect(allowedChannels().sort()).toEqual(["notifications", "reports"]);
+    const r = loadNotifications(NOW, "reports");
+    expect(r.items.map((i) => i.id)).toEqual(["r"]);
+    expect(r.groups.map((g) => g.label)).toEqual(["Today"]);
+    expect(loadNotifications(NOW).items.some((i) => i.id === "r")).toBe(false);
   });
 });
