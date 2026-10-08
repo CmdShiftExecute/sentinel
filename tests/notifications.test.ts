@@ -4,7 +4,7 @@ import {
   SEVERITY_ORDER, type NotificationItem, type Severity,
 } from "../src/lib/notifications";
 
-const TZ = "Asia/Dubai";
+const TZ = "Etc/GMT-4";
 // Thu 08-Oct-2026 17:05 GST
 const NOW = Date.parse("2026-10-08T17:05:00+04:00");
 const at = (iso: string) => Date.parse(iso);

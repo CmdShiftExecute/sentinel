@@ -19,7 +19,7 @@ fs.writeFileSync(feed, [
 ].join("\n"));
 process.env.SENTINEL_NOTIFICATIONS_FEED = feed;
 process.env.SENTINEL_NOTIFICATIONS_STATE = path.join(dir, "state.json");
-process.env.NEXT_PUBLIC_SENTINEL_TZ = "Asia/Dubai";
+process.env.NEXT_PUBLIC_SENTINEL_TZ = "Etc/GMT-4";
 // config comes from the working directory's sentinel.config.json; give the test its own
 fs.writeFileSync(path.join(dir, "sentinel.config.json"), JSON.stringify({ notifications: { feedPath: "", channels: ["notifications"], extraChannels: ["reports"] } }));
 process.chdir(dir);
